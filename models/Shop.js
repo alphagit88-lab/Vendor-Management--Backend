@@ -1,13 +1,13 @@
 const pool = require('../config/database');
 
 class Shop {
-  static async create({ name, address, contact }) {
+  static async create({ name, address, contact, account_id, permit_numbers }) {
     const query = `
-      INSERT INTO shops (name, address, contact, created_at, updated_at)
-      VALUES ($1, $2, $3, NOW(), NOW())
+      INSERT INTO shops (name, address, contact, account_id, permit_numbers, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       RETURNING *
     `;
-    const values = [name, address, contact];
+    const values = [name, address, contact, account_id, permit_numbers];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -24,7 +24,7 @@ class Shop {
     return result.rows;
   }
 
-  static async update(id, { name, address, contact }) {
+  static async update(id, { name, address, contact, account_id, permit_numbers }) {
     const updates = [];
     const values = [];
     let paramCount = 1;
@@ -40,6 +40,14 @@ class Shop {
     if (contact !== undefined) {
       updates.push(`contact = $${paramCount++}`);
       values.push(contact);
+    }
+    if (account_id !== undefined) {
+      updates.push(`account_id = $${paramCount++}`);
+      values.push(account_id);
+    }
+    if (permit_numbers !== undefined) {
+      updates.push(`permit_numbers = $${paramCount++}`);
+      values.push(permit_numbers);
     }
 
     if (updates.length === 0) {

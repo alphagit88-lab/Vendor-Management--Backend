@@ -1,13 +1,13 @@
 const pool = require('../config/database');
 
 class Item {
-  static async create({ name, price, description }) {
+  static async create({ name, price, description, sku, upc }) {
     const query = `
-      INSERT INTO items (name, price, description, created_at, updated_at)
-      VALUES ($1, $2, $3, NOW(), NOW())
+      INSERT INTO items (name, price, description, sku, upc, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
       RETURNING *
     `;
-    const values = [name, price, description];
+    const values = [name, price, description, sku, upc];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -40,6 +40,14 @@ class Item {
     if (description !== undefined) {
       updates.push(`description = $${paramCount++}`);
       values.push(description);
+    }
+    if (sku !== undefined) {
+      updates.push(`sku = $${paramCount++}`);
+      values.push(sku);
+    }
+    if (upc !== undefined) {
+      updates.push(`upc = $${paramCount++}`);
+      values.push(upc);
     }
 
     if (updates.length === 0) {
