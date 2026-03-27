@@ -6,5 +6,4 @@ dist/
 build/
 
 # Firebase / Google Cloud secrets
-*.json
 binrental-firebase-adminsdk-*.json
