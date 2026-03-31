@@ -7,3 +7,15 @@ build/
 
 # Firebase / Google Cloud secrets
 binrental-firebase-adminsdk-*.json
+.vercel
+.env*.local
+
+# Scratch and database scripts
+*.sql
+convertSql.js
+fastImport.js
+renameTable.js
+importDb.js
+testDb.js
+neon_inserts.sql
+vendor_db_neon.sql

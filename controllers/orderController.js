@@ -26,7 +26,7 @@ exports.getOrder = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { shop_id, user_id, items, notes, load_number, total_credits, total_deposit } = req.body;
+    const { customer_id, user_id, items, notes, load_number, total_credits, total_deposit } = req.body;
     
     // Simple order number generation (e.g., ORD-timestamp)
     const order_number = `ORD-${Date.now().toString().slice(-8)}`;
@@ -35,7 +35,7 @@ exports.createOrder = async (req, res) => {
 
     const newOrder = await Order.create({
       order_number,
-      shop_id,
+      customer_id,
       user_id: user_id || req.user.id,
       total_amount,
       total_credits: total_credits || 0,

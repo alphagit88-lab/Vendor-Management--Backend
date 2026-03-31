@@ -1,17 +1,17 @@
 const pool = require('../config/database');
 
 class Order {
-  static async create({ order_number, shop_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, items }) {
+  static async create({ order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, items }) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       const orderQuery = `
-        INSERT INTO orders (order_number, shop_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, created_at, updated_at)
+        INSERT INTO orders (order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         RETURNING *
       `;
-      const orderValues = [order_number, shop_id, user_id, total_amount, total_credits || 0, total_deposit || 0, status || 'pending', notes || null, load_number || null];
+      const orderValues = [order_number, customer_id, user_id, total_amount, total_credits || 0, total_deposit || 0, status || 'pending', notes || null, load_number || null];
       const orderResult = await client.query(orderQuery, orderValues);
       const order = orderResult.rows[0];
 
@@ -38,9 +38,9 @@ class Order {
 
   static async findById(id) {
     const orderQuery = `
-      SELECT o.*, s.name as shop_name, u.name as user_name
+      SELECT o.*, c.name as customer_name, u.name as user_name
       FROM orders o
-      JOIN shops s ON o.shop_id = s.id
+      JOIN customers c ON o.customer_id = c.id
       LEFT JOIN users u ON o.user_id = u.id
       WHERE o.id = $1
     `;
@@ -63,9 +63,9 @@ class Order {
 
   static async findAll() {
     const query = `
-      SELECT o.*, s.name as shop_name, u.name as user_name
+      SELECT o.*, c.name as customer_name, u.name as user_name
       FROM orders o
-      JOIN shops s ON o.shop_id = s.id
+      JOIN customers c ON o.customer_id = c.id
       LEFT JOIN users u ON o.user_id = u.id
       ORDER BY o.created_at DESC
     `;

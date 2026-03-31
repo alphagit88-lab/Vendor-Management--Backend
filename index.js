@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const shopRoutes = require('./routes/shopRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -12,23 +12,23 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const app = express();
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
+  process.env.FRONTEND_URL,
   'http://localhost:3000',
+  'http://localhost:3001',
   'http://localhost:8081',
-];
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
+    if (!origin) return callback(null, true);
+    
+    const originDomain = origin.replace(/^https?:\/\//, '');
     const isAllowed = allowedOrigins.some(allowed => {
-      const allowedDomain = allowed.replace(/^https?:\/\//, '');
-      const originDomain = origin.replace(/^https?:\/\//, '');
-      return originDomain === allowedDomain || originDomain.includes(allowedDomain);
+      const allowedDomain = allowed.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      return originDomain === allowedDomain || originDomain.endsWith(allowedDomain);
     });
-    if (isAllowed) {
+
+    if (isAllowed || originDomain.includes('vercel.app') || originDomain.startsWith('localhost:')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -52,7 +52,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/shops', shopRoutes);
+app.use('/api/customers', customerRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/dashboard', dashboardRoutes);
