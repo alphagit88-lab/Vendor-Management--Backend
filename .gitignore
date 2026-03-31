@@ -7,8 +7,13 @@ build/
 
 # Firebase / Google Cloud secrets
 binrental-firebase-adminsdk-*.json
+# Vercel and local environment files
 .vercel
 .env*.local
+.env.production
+.env.vercel
+.env.production.local
+.env.development.local
 
 # Scripts and database snapshots
 scripts/database/*.js
@@ -21,3 +26,6 @@ importDb.js
 testDb.js
 neon_inserts.sql
 vendor_db_neon.sql
+
+.vercel
+.env*.local
