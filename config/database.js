@@ -10,7 +10,14 @@ neonConfig.webSocketConstructor = ws;
 const isNeon = process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech');
 
 let pool;
-if (isNeon) {
+if (process.env.DATABASE_URL) {
+  // Production / Vercel pattern using a single connection string
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: true,
+    max: 20
+  });
+} else if (isNeon) {
   const connectionString = `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}/${process.env.DB_NAME}?sslmode=require`;
   pool = new Pool({
     connectionString,
@@ -19,7 +26,7 @@ if (isNeon) {
     connectionTimeoutMillis: 10000,
   });
 } else {
-  // Graceful fallback to standard pg if you ever switch back to your PC's binrental_db
+  // Graceful fallback to standard pg
   const pg = require('pg');
   pool = new pg.Pool({
     host: process.env.DB_HOST || 'localhost',
