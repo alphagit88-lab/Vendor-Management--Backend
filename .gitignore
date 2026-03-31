@@ -10,7 +10,9 @@ binrental-firebase-adminsdk-*.json
 .vercel
 .env*.local
 
-# Scratch and database scripts
+# Scripts and database snapshots
+scripts/database/*.js
+migrations/*.sql
 *.sql
 convertSql.js
 fastImport.js
