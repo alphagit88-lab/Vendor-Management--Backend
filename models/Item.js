@@ -1,13 +1,13 @@
 const pool = require('../config/database');
 
 class Item {
-  static async create({ description_name, price, description, item_number, upc, cost, quantity_size }) {
+  static async create({ description_name, price, description, item_number, upc, cost, quantity_size, vendor_cost }) {
     const query = `
-      INSERT INTO items (description_name, price, description, item_number, upc, cost, quantity_size, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      INSERT INTO items (description_name, price, description, item_number, upc, cost, quantity_size, vendor_cost, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
       RETURNING *
     `;
-    const values = [description_name, price, description, item_number, upc, cost, quantity_size];
+    const values = [description_name, price, description, item_number, upc, cost, quantity_size, vendor_cost];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -24,12 +24,12 @@ class Item {
     return result.rows;
   }
 
-  static async update(id, { description_name, price, description, item_number, upc, cost, quantity_size }) {
+  static async update(id, { description_name, price, description, item_number, upc, cost, quantity_size, vendor_cost }) {
     const updates = [];
     const values = [];
     let paramCount = 1;
 
-    const fields = { description_name, price, description, item_number, upc, cost, quantity_size };
+    const fields = { description_name, price, description, item_number, upc, cost, quantity_size, vendor_cost };
 
     for (const [key, value] of Object.entries(fields)) {
       if (value !== undefined) {
