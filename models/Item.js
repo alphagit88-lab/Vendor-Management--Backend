@@ -1,13 +1,13 @@
 const pool = require('../config/database');
 
 class Item {
-  static async create({ name, price, description, sku, upc }) {
+  static async create({ description_name, price, description, item_number, upc, cost, quantity_size }) {
     const query = `
-      INSERT INTO items (name, price, description, sku, upc, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      INSERT INTO items (description_name, price, description, item_number, upc, cost, quantity_size, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
       RETURNING *
     `;
-    const values = [name, price, description, sku, upc];
+    const values = [description_name, price, description, item_number, upc, cost, quantity_size];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -24,30 +24,18 @@ class Item {
     return result.rows;
   }
 
-  static async update(id, { name, price, description }) {
+  static async update(id, { description_name, price, description, item_number, upc, cost, quantity_size }) {
     const updates = [];
     const values = [];
     let paramCount = 1;
 
-    if (name !== undefined) {
-      updates.push(`name = $${paramCount++}`);
-      values.push(name);
-    }
-    if (price !== undefined) {
-      updates.push(`price = $${paramCount++}`);
-      values.push(price);
-    }
-    if (description !== undefined) {
-      updates.push(`description = $${paramCount++}`);
-      values.push(description);
-    }
-    if (sku !== undefined) {
-      updates.push(`sku = $${paramCount++}`);
-      values.push(sku);
-    }
-    if (upc !== undefined) {
-      updates.push(`upc = $${paramCount++}`);
-      values.push(upc);
+    const fields = { description_name, price, description, item_number, upc, cost, quantity_size };
+
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        updates.push(`${key} = $${paramCount++}`);
+        values.push(value);
+      }
     }
 
     if (updates.length === 0) {

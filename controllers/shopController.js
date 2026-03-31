@@ -12,7 +12,7 @@ exports.getShops = async (req, res) => {
 
 exports.createShop = async (req, res) => {
   try {
-    const { name, address, contact, account_id, permit_numbers } = req.body;
+    const { name, address, phone, account_id, permit_numbers, registered_company_name, dba, email, sales_tax_id, has_cigarette_permit, tobacco_permit_number, tobacco_expire_date, payment_type } = req.body;
     
     if (!name || !address) {
       return res.status(400).json({ success: false, message: 'Name and address are required' });
@@ -21,9 +21,17 @@ exports.createShop = async (req, res) => {
     const newShop = await Shop.create({
       name,
       address,
-      contact: contact || null,
+      phone: phone || null,
       account_id: account_id || null,
-      permit_numbers: permit_numbers || null
+      permit_numbers: permit_numbers || null,
+      registered_company_name,
+      dba,
+      email,
+      sales_tax_id,
+      has_cigarette_permit,
+      tobacco_permit_number,
+      tobacco_expire_date,
+      payment_type
     });
 
     res.status(201).json({ success: true, data: newShop });
@@ -36,8 +44,8 @@ exports.createShop = async (req, res) => {
 exports.updateShop = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, address, contact, account_id, permit_numbers } = req.body;
-    const updatedShop = await Shop.update(id, { name, address, contact, account_id, permit_numbers });
+    const { name, address, phone, account_id, permit_numbers, registered_company_name, dba, email, sales_tax_id, has_cigarette_permit, tobacco_permit_number, tobacco_expire_date, payment_type } = req.body;
+    const updatedShop = await Shop.update(id, { name, address, phone, account_id, permit_numbers, registered_company_name, dba, email, sales_tax_id, has_cigarette_permit, tobacco_permit_number, tobacco_expire_date, payment_type });
     if (!updatedShop) {
       return res.status(404).json({ success: false, message: 'Shop not found' });
     }

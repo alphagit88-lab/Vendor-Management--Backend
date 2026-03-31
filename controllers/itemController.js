@@ -12,18 +12,20 @@ exports.getItems = async (req, res) => {
 
 exports.createItem = async (req, res) => {
   try {
-    const { name, price, description, sku, upc } = req.body;
+    const { description_name, price, description, item_number, upc, cost, quantity_size } = req.body;
     
-    if (!name || !price) {
-      return res.status(400).json({ success: false, message: 'Name and price are required' });
+    if (!description_name || !price) {
+      return res.status(400).json({ success: false, message: 'Description name and price are required' });
     }
 
     const newItem = await Item.create({
-      name,
+      description_name,
       price,
       description: description || null,
-      sku: sku || null,
-      upc: upc || null
+      item_number,
+      upc: upc || null,
+      cost: cost || 0,
+      quantity_size
     });
 
     res.status(201).json({ success: true, data: newItem });
@@ -36,8 +38,8 @@ exports.createItem = async (req, res) => {
 exports.updateItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, description, sku, upc } = req.body;
-    const updatedItem = await Item.update(id, { name, price, description, sku, upc });
+    const { description_name, price, description, item_number, upc, cost, quantity_size } = req.body;
+    const updatedItem = await Item.update(id, { description_name, price, description, item_number, upc, cost, quantity_size });
     if (!updatedItem) {
       return res.status(404).json({ success: false, message: 'Item not found' });
     }
