@@ -32,6 +32,18 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Welcome to the Vendor Management API',
+    endpoints: {
+      health: '/api/health',
+      version: 'v1'
+    }
+  });
+});
+
 // Health check route
 app.get('/api/health', (req, res) => {
   res.json({
