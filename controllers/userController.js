@@ -12,7 +12,7 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, phone, email, password, role } = req.body;
+    const { name, phone, email, password, role, inventory_location } = req.body;
     
     const existingUser = await User.findByPhone(phone);
     if (existingUser) {
@@ -24,7 +24,8 @@ exports.createUser = async (req, res) => {
       phone,
       email,
       role: role || 'staff',
-      password
+      password,
+      inventory_location
     });
 
     res.status(201).json({ success: true, data: newUser });
@@ -37,8 +38,8 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role } = req.body;
-    const updatedUser = await User.update(id, { name, email, role });
+    const { name, email, role, inventory_location } = req.body;
+    const updatedUser = await User.update(id, { name, email, role, inventory_location });
     if (!updatedUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
