@@ -13,6 +13,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
+const pool = require('./config/database');
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
