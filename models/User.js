@@ -2,14 +2,14 @@ const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class User {
-  static async create({ name, phone, email, role, password }) {
+  static async create({ name, phone, email, role, password, inventory_location }) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const query = `
-      INSERT INTO users (name, phone, email, role, password_hash, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-      RETURNING id, name, phone, email, role, created_at, updated_at
+      INSERT INTO users (name, phone, email, role, password_hash, inventory_location, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      RETURNING id, name, phone, email, role, inventory_location, created_at, updated_at
     `;
-    const values = [name, phone, email || null, role, hashedPassword];
+    const values = [name, phone, email || null, role, hashedPassword, inventory_location || null];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -22,6 +22,7 @@ class User {
         phone,
         email,
         role,
+        inventory_location,
         password_hash,
         created_at,
         updated_at
@@ -57,6 +58,7 @@ class User {
         phone, 
         email, 
         role,
+        inventory_location,
         created_at, 
         updated_at 
       FROM users 
@@ -66,7 +68,7 @@ class User {
     return result.rows;
   }
 
-  static async update(id, { name, email, role }) {
+  static async update(id, { name, email, role, inventory_location }) {
     const updates = [];
     const values = [];
     let paramCount = 1;
@@ -83,6 +85,10 @@ class User {
       updates.push(`role = $${paramCount++}`);
       values.push(role);
     }
+    if (inventory_location !== undefined) {
+      updates.push(`inventory_location = $${paramCount++}`);
+      values.push(inventory_location || null);
+    }
 
     if (updates.length === 0) {
       return await this.findById(id);
@@ -95,7 +101,7 @@ class User {
       UPDATE users 
       SET ${updates.join(', ')}
       WHERE id = $${paramCount}
-      RETURNING id, name, phone, email, role, created_at, updated_at
+      RETURNING id, name, phone, email, role, inventory_location, created_at, updated_at
     `;
     const result = await pool.query(query, values);
     return result.rows[0];

@@ -10,6 +10,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
 
@@ -26,8 +27,7 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Added manual pre-flight catch-all to fix Vercel CORS issues
-app.options('*', cors());
+// CORS handled by middleware above
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -50,6 +50,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // 404 handler
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));

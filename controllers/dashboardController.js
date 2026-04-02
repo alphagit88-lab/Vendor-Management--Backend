@@ -11,10 +11,10 @@ exports.getStats = async (req, res) => {
       // Users from 30 days ago
       pool.query('SELECT COUNT(*) FROM users WHERE role != $1 AND created_at < $2', ['admin', thirtyDaysAgo]),
 
-      // Total Shops
-      pool.query('SELECT COUNT(*) FROM shops'),
-      // Shops from 30 days ago
-      pool.query('SELECT COUNT(*) FROM shops WHERE created_at < $1', [thirtyDaysAgo]),
+      // Total Customers
+      pool.query('SELECT COUNT(*) FROM customers'),
+      // Customers from 30 days ago
+      pool.query('SELECT COUNT(*) FROM customers WHERE created_at < $1', [thirtyDaysAgo]),
 
       // Total Items
       pool.query('SELECT COUNT(*) FROM items'),
