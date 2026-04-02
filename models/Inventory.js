@@ -13,15 +13,15 @@ class Inventory {
     return result.rows;
   }
 
-  static async updateStock(item_id, quantity_changed, type, notes = null, reference_id = null) {
+  static async updateStock(item_id, quantity_changed, type, notes = null, reference_id = null, unit_cost = 0) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       // 1. Update overall inventory
       const updateQuery = `
-        INSERT INTO inventory (item_id, quantity)
-        VALUES ($1, $2)
+        INSERT INTO inventory (item_id, quantity, last_restock_at, updated_at)
+        VALUES ($1, $2, CASE WHEN $2 > 0 THEN NOW() ELSE NULL END, NOW())
         ON CONFLICT (item_id) DO UPDATE 
         SET quantity = inventory.quantity + EXCLUDED.quantity, 
             updated_at = NOW(),
@@ -30,12 +30,17 @@ class Inventory {
       `;
       const updateResult = await client.query(updateQuery, [item_id, quantity_changed]);
 
-      // 2. Log transaction
+      // 2. Log transaction with unit_cost
       const logQuery = `
-        INSERT INTO inventory_logs (item_id, quantity_changed, type, reference_id, notes)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO inventory_logs (item_id, quantity_changed, type, reference_id, notes, unit_cost)
+        VALUES ($1, $2, $3, $4, $5, $6)
       `;
-      await client.query(logQuery, [item_id, quantity_changed, type, reference_id, notes]);
+      await client.query(logQuery, [item_id, quantity_changed, type, reference_id, notes, unit_cost]);
+
+      // 3. Update item's core cost if it's a restock and a cost was provided
+      if (type === 'RESTOCK' && unit_cost > 0) {
+        await client.query('UPDATE items SET vendor_cost = $1 WHERE id = $2', [unit_cost, item_id]);
+      }
 
       await client.query('COMMIT');
       return updateResult.rows[0];

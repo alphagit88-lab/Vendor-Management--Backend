@@ -12,13 +12,13 @@ exports.getInventory = async (req, res) => {
 
 exports.updateStock = async (req, res) => {
   try {
-    const { item_id, quantity_changed, type, notes } = req.body;
+    const { item_id, quantity_changed, type, notes, unit_cost } = req.body;
     
     if (!item_id || !quantity_changed || !type) {
       return res.status(400).json({ success: false, message: 'Item ID, quantity, and type are required' });
     }
 
-    const updated = await Inventory.updateStock(item_id, quantity_changed, type, notes);
+    const updated = await Inventory.updateStock(item_id, quantity_changed, type, notes, null, unit_cost);
     res.json({ success: true, data: updated });
   } catch (error) {
     console.error(error);
