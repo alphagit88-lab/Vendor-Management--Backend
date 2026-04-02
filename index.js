@@ -26,6 +26,9 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
+// Added manual pre-flight catch-all to fix Vercel CORS issues
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
