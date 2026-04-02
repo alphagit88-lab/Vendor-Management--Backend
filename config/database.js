@@ -1,39 +1,24 @@
-const { Pool, neonConfig } = require('@neondatabase/serverless');
-const ws = require('ws');
 require('dotenv').config();
-
-// EXTREMELY IMPORTANT FIX:
-// This forces Neon to use WebSockets (Port 443) instead of standard TCP (Port 5432).
-// This guarantees that any ISP blocks or firewalls on your PC will be completely bypassed!
-neonConfig.webSocketConstructor = ws;
-
-const isNeon = process.env.DB_HOST && process.env.DB_HOST.includes('neon.tech');
-
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
 let pool;
-if (process.env.DATABASE_URL) {
-  // Production / Vercel pattern using a single connection string
+
+if (isVercel) {
+  // Use standard pg for Vercel
+  const { Pool } = require('pg');
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: true,
-    max: 20
-  });
-} else if (isNeon) {
-  const connectionString = `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}/${process.env.DB_NAME}?sslmode=require`;
-  pool = new Pool({
-    connectionString,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    ssl: { rejectUnauthorized: false },
+    max: 10
   });
 } else {
-  // Graceful fallback to standard pg
-  const pg = require('pg');
-  pool = new pg.Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'binrental_db',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
+  // Use neon-serverless with ws fix for Local development
+  const { Pool, neonConfig } = require('@neondatabase/serverless');
+  const ws = require('ws');
+  neonConfig.webSocketConstructor = ws;
+  
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL || `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}/${process.env.DB_NAME}?sslmode=require`,
+    max: 5
   });
 }
 
