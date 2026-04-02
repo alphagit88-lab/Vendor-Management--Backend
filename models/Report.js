@@ -38,12 +38,12 @@ class Report {
     const query = `
       SELECT 
         i.description_name as item_name,
-        inv.quantity as stock,
+        COALESCE(inv.quantity, 0) + COALESCE((SELECT SUM(quantity) FROM salesperson_inventory WHERE item_id = i.id), 0) as stock,
         inv.reorder_level
       FROM items i
       LEFT JOIN inventory inv ON i.id = inv.item_id
-      WHERE inv.quantity <= inv.reorder_level
-      ORDER BY inv.quantity ASC;
+      WHERE (COALESCE(inv.quantity, 0) + COALESCE((SELECT SUM(quantity) FROM salesperson_inventory WHERE item_id = i.id), 0)) <= inv.reorder_level
+      ORDER BY stock ASC;
     `;
     const result = await pool.query(query);
     return result.rows;
