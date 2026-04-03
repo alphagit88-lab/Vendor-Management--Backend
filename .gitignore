@@ -32,3 +32,9 @@ vendor_db_neon.sql
 
 # SSH Keys
 *.pem
+
+# Test and debug scripts (may contain secrets)
+scripts/testLogin.js
+scripts/resetStaffPassword.js
+scripts/migrateRoles.js
+scripts/seedMigrationHistory.js
