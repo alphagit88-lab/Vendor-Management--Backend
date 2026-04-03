@@ -2,14 +2,14 @@ const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class User {
-  static async create({ name, phone, email, role, password, inventory_location }) {
+  static async create({ name, phone, username, email, role, password, inventory_location }) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const query = `
-      INSERT INTO users (name, phone, email, role, password_hash, inventory_location, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-      RETURNING id, name, phone, email, role, inventory_location, created_at, updated_at
+      INSERT INTO users (name, phone, username, email, role, password_hash, inventory_location, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      RETURNING id, name, phone, username, email, role, inventory_location, created_at, updated_at
     `;
-    const values = [name, phone, email || null, role, hashedPassword, inventory_location || null];
+    const values = [name, phone, username || null, email || null, role, hashedPassword, inventory_location || null];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
@@ -20,6 +20,7 @@ class User {
         id,
         name,
         phone,
+        username,
         email,
         role,
         inventory_location,
@@ -33,14 +34,56 @@ class User {
     return result.rows[0];
   }
 
+  static async findByUsername(username) {
+    const query = `
+      SELECT
+        id,
+        name,
+        phone,
+        username,
+        email,
+        role,
+        inventory_location,
+        password_hash,
+        created_at,
+        updated_at
+      FROM users
+      WHERE username = $1
+    `;
+    const result = await pool.query(query, [username]);
+    return result.rows[0];
+  }
+
+  static async findByEmail(email) {
+    const query = `
+      SELECT
+        id,
+        name,
+        phone,
+        username,
+        email,
+        role,
+        inventory_location,
+        password_hash,
+        created_at,
+        updated_at
+      FROM users
+      WHERE email = $1
+    `;
+    const result = await pool.query(query, [email]);
+    return result.rows[0];
+  }
+
   static async findById(id) {
     const query = `
       SELECT 
         id, 
         name, 
         phone, 
+        username,
         email, 
         role,
+        inventory_location,
         created_at, 
         updated_at 
       FROM users 
@@ -56,6 +99,7 @@ class User {
         id, 
         name, 
         phone, 
+        username,
         email, 
         role,
         inventory_location,
@@ -68,7 +112,7 @@ class User {
     return result.rows;
   }
 
-  static async update(id, { name, email, role, inventory_location }) {
+  static async update(id, { name, username, email, role, inventory_location }) {
     const updates = [];
     const values = [];
     let paramCount = 1;
@@ -76,6 +120,10 @@ class User {
     if (name !== undefined) {
       updates.push(`name = $${paramCount++}`);
       values.push(name);
+    }
+    if (username !== undefined) {
+      updates.push(`username = $${paramCount++}`);
+      values.push(username || null);
     }
     if (email !== undefined) {
       updates.push(`email = $${paramCount++}`);
@@ -101,7 +149,7 @@ class User {
       UPDATE users 
       SET ${updates.join(', ')}
       WHERE id = $${paramCount}
-      RETURNING id, name, phone, email, role, inventory_location, created_at, updated_at
+      RETURNING id, name, phone, username, email, role, inventory_location, created_at, updated_at
     `;
     const result = await pool.query(query, values);
     return result.rows[0];

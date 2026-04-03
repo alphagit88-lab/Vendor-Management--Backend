@@ -12,16 +12,26 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, phone, email, password, role, inventory_location } = req.body;
+    const { name, phone, username, email, password, role, inventory_location } = req.body;
     
-    const existingUser = await User.findByPhone(phone);
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Phone already registered' });
+    if (phone) {
+        const existingUser = await User.findByPhone(phone);
+        if (existingUser) {
+          return res.status(400).json({ success: false, message: 'Phone already registered' });
+        }
+    }
+
+    if (username) {
+        const existingByUsername = await User.findByUsername(username);
+        if (existingByUsername) {
+            return res.status(400).json({ success: false, message: 'Username already taken' });
+        }
     }
 
     const newUser = await User.create({
       name,
       phone,
+      username,
       email,
       role: role || 'staff',
       password,
@@ -38,8 +48,14 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, inventory_location } = req.body;
-    const updatedUser = await User.update(id, { name, email, role, inventory_location });
+    const { name, username, email, role, inventory_location, password } = req.body;
+
+    if (password) {
+        const hashedPassword = await User.hashPassword(password);
+        await User.updatePassword(id, hashedPassword);
+    }
+
+    const updatedUser = await User.update(id, { name, username, email, role, inventory_location });
     if (!updatedUser) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }

@@ -2,7 +2,8 @@ const Order = require('../models/Order');
 
 exports.getOrders = async (req, res) => {
   try {
-    const orders = await Order.findAll();
+    const userId = req.user.role === 'admin' ? null : req.user.id;
+    const orders = await Order.findAll(userId);
     res.json({ success: true, data: orders });
   } catch (error) {
     console.error(error);
