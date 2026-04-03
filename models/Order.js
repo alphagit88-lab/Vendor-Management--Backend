@@ -61,15 +61,20 @@ class Order {
     return order;
   }
 
-  static async findAll() {
-    const query = `
+  static async findAll(userId = null) {
+    let query = `
       SELECT o.*, c.name as customer_name, u.name as user_name
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
       LEFT JOIN users u ON o.user_id = u.id
-      ORDER BY o.created_at DESC
     `;
-    const result = await pool.query(query);
+    const values = [];
+    if (userId) {
+      query += ` WHERE o.user_id = $1`;
+      values.push(userId);
+    }
+    query += ` ORDER BY o.created_at DESC`;
+    const result = await pool.query(query, values);
     return result.rows;
   }
 

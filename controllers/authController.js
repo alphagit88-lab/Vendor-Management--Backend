@@ -4,15 +4,21 @@ const jwtConfig = require('../config/jwt');
 
 exports.login = async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    const { email, username, phone, password } = req.body;
+    const identifier = email || username || phone;
 
-    if (!phone || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide phone and password' });
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide credentials' });
     }
 
-    const user = await User.findByPhone(phone);
-    if (!user || user.role !== 'admin') {
-      return res.status(401).json({ success: false, message: 'Invalid credentials or not an admin' });
+    let user;
+    if (email) user = await User.findByEmail(email);
+    if (!user && username) user = await User.findByUsername(username);
+    if (!user && phone) user = await User.findByPhone(phone);
+    if (!user && !email && !username && !phone) return res.status(400).json({ success: false, message: 'Missing login credentials' });
+
+    if (!user || (user.role !== 'admin' && user.role !== 'staff')) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials or you are not a staff member' });
     }
 
     const isMatch = await User.verifyPassword(user, password);

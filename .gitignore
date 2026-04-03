@@ -17,8 +17,8 @@ binrental-firebase-adminsdk-*.json
 
 # Scripts and database snapshots
 scripts/database/*.js
-migrations/*.sql
 *.sql
+!migrations/[0-9]*.sql
 convertSql.js
 fastImport.js
 renameTable.js
@@ -29,3 +29,12 @@ vendor_db_neon.sql
 
 .vercel
 .env*.local
+
+# SSH Keys
+*.pem
+
+# Test and debug scripts (may contain secrets)
+scripts/testLogin.js
+scripts/resetStaffPassword.js
+scripts/migrateRoles.js
+scripts/seedMigrationHistory.js
