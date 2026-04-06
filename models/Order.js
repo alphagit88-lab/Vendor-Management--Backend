@@ -19,9 +19,9 @@ class Order {
       if (items && items.length > 0) {
         const Inventory = require('./Inventory');
         for (const item of items) {
-          // 2. Insert Order Item (matched to production columns: order_id, item_id, quantity, price, subtotal)
+          // 2. Insert Order Item (matched to production columns: order_id, item_id, quantity, unit_price, subtotal)
           const itemQuery = `
-            INSERT INTO order_items (order_id, item_id, quantity, price, subtotal)
+            INSERT INTO order_items (order_id, item_id, quantity, unit_price, subtotal)
             VALUES ($1, $2, $3, $4, $5)
           `;
           const itemValues = [order.id, item.item_id, item.quantity, item.price, item.subtotal];
