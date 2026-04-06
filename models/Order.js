@@ -16,13 +16,26 @@ class Order {
       const order = orderResult.rows[0];
 
       if (items && items.length > 0) {
+        const Inventory = require('./Inventory');
         for (const item of items) {
+          // 1. Insert Order Item
           const itemQuery = `
             INSERT INTO order_items (order_id, item_id, quantity, unit_price, unit_discount, unit_deposit, subtotal, created_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
           `;
           const itemValues = [order.id, item.item_id, item.quantity, item.unit_price, item.unit_discount || 0, item.unit_deposit || 0, item.subtotal];
           await client.query(itemQuery, itemValues);
+
+          // 2. IMPORTANT: Deduct from Salesperson Inventory
+          // This uses SALE type which ONLY affects salesperson_inventory table.
+          await Inventory.updateStock({
+            item_id: item.item_id,
+            quantity: -Math.abs(item.quantity), // Must be negative to deduct
+            type: 'SALE',
+            notes: `Sale - Order #${order_number}`,
+            salesperson_id: user_id, 
+            user_actor_id: user_id
+          }, client);
         }
       }
 

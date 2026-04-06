@@ -3,8 +3,8 @@ const router = express.Router();
 const inventoryController = require('../controllers/inventoryController');
 const { authenticate, verifyAdmin } = require('../middleware/authMiddleware');
 
-router.get('/', authenticate, verifyAdmin, inventoryController.getInventory);
+router.get('/', authenticate, inventoryController.getInventory);
 router.post('/update', authenticate, verifyAdmin, inventoryController.updateStock);
-router.get('/logs', authenticate, verifyAdmin, inventoryController.getLogs);
+router.get('/logs', authenticate, inventoryController.getLogs);
 
 module.exports = router;
