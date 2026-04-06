@@ -49,8 +49,13 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({ success: true, data: newOrder });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    console.error('🔴 CREATE ORDER ERROR:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server Error', 
+      detail: error.message,
+      stack: error.stack 
+    });
   }
 };
 

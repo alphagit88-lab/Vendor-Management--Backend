@@ -6,9 +6,10 @@ class Order {
     try {
       await client.query('BEGIN');
 
+      // 1. Transactional Update - orders table (removed non-existent updated_at)
       const orderQuery = `
-        INSERT INTO orders (order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        INSERT INTO orders (order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         RETURNING *
       `;
       const orderValues = [order_number, customer_id, user_id, total_amount, total_credits || 0, total_deposit || 0, status || 'pending', notes || null, load_number || null];
@@ -18,19 +19,18 @@ class Order {
       if (items && items.length > 0) {
         const Inventory = require('./Inventory');
         for (const item of items) {
-          // 1. Insert Order Item
+          // 2. Insert Order Item (matched to production columns: order_id, item_id, quantity, price, subtotal)
           const itemQuery = `
-            INSERT INTO order_items (order_id, item_id, quantity, unit_price, unit_discount, unit_deposit, subtotal, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            INSERT INTO order_items (order_id, item_id, quantity, price, subtotal)
+            VALUES ($1, $2, $3, $4, $5)
           `;
-          const itemValues = [order.id, item.item_id, item.quantity, item.unit_price, item.unit_discount || 0, item.unit_deposit || 0, item.subtotal];
+          const itemValues = [order.id, item.item_id, item.quantity, item.price, item.subtotal];
           await client.query(itemQuery, itemValues);
 
-          // 2. IMPORTANT: Deduct from Salesperson Inventory
-          // This uses SALE type which ONLY affects salesperson_inventory table.
+          // 3. Deduct from Salesperson Inventory
           await Inventory.updateStock({
             item_id: item.item_id,
-            quantity: -Math.abs(item.quantity), // Must be negative to deduct
+            quantity: -Math.abs(item.quantity),
             type: 'SALE',
             notes: `Sale - Order #${order_number}`,
             salesperson_id: user_id, 
