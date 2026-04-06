@@ -10,6 +10,7 @@ class Inventory {
         i.id,
         i.description_name as item_name,
         i.item_number,
+        i.price,
         c.name as category_name,
         COALESCE(inv.quantity, 0) as warehouse_quantity,
         (SELECT COALESCE(SUM(quantity), 0) FROM salesperson_inventory WHERE item_id = i.id) as salesperson_quantity,
@@ -42,10 +43,12 @@ class Inventory {
    * - ASSIGNMENT: Move from warehouse to salesperson.
    * - SALE: Sale by salesperson (decrements salesperson stock).
    */
-  static async updateStock({ item_id, quantity, type, notes, user_actor_id, unit_cost, salesperson_id }) {
-    const client = await pool.connect();
+  static async updateStock({ item_id, quantity, type, notes, user_actor_id, unit_cost, salesperson_id }, client = null) {
+    const isSharedClient = !!client;
+    if (!client) client = await pool.connect();
+    
     try {
-      await client.query('BEGIN');
+      if (!isSharedClient) await client.query('BEGIN');
 
       // 1. Transactional Update
       if (type === 'RESTOCK' || type === 'ADJUSTMENT') {
@@ -100,24 +103,24 @@ class Inventory {
           }
       }
 
-      // 2. Log Entry
+      // 2. Log Entry - CRITICAL: FIXED to include actor and staff IDs
       await client.query(`
-        INSERT INTO inventory_logs (item_id, quantity_changed, type, notes, unit_cost, created_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
-      `, [item_id, quantity, type, notes, unit_cost]);
+        INSERT INTO inventory_logs (item_id, user_id, salesperson_id, quantity_changed, type, notes, unit_cost, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      `, [item_id, user_actor_id || null, salesperson_id || null, quantity, type, notes, unit_cost]);
 
-      await client.query('COMMIT');
+      if (!isSharedClient) await client.query('COMMIT');
       return { success: true };
     } catch (error) {
-      await client.query('ROLLBACK');
+      if (!isSharedClient) await client.query('ROLLBACK');
       console.error('Inventory Update Error:', error.message);
       throw error;
     } finally {
-      client.release();
+      if (!isSharedClient) client.release();
     }
   }
 
-  static async getLogs(item_id = null) {
+  static async getLogs(item_id = null, salesperson_id = null) {
     let query = `
       SELECT 
         l.*, 
@@ -127,10 +130,22 @@ class Inventory {
       LEFT JOIN items i ON l.item_id = i.id
     `;
     const params = [];
+    const conditions = [];
+
     if (item_id) {
-      query += ` WHERE l.item_id = $1`;
       params.push(item_id);
+      conditions.push(`l.item_id = $${params.length}`);
     }
+
+    if (salesperson_id) {
+      params.push(salesperson_id);
+      conditions.push(`(l.salesperson_id = $${params.length} OR l.user_id = $${params.length})`);
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ` + conditions.join(' AND ');
+    }
+
     query += ` ORDER BY l.created_at DESC LIMIT 100`;
     const result = await pool.query(query, params);
     return result.rows;
