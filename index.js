@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+// Force reload trigger
 const cors = require('cors');
 
 const authRoutes = require('./routes/authRoutes');
