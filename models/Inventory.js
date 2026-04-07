@@ -26,7 +26,7 @@ class Inventory {
           FROM salesperson_inventory si
           JOIN users u ON si.user_id = u.id
           WHERE si.item_id = i.id
-        ), '[]') as sub_inventories
+        ), '[]'::json) as sub_inventories
       FROM items i
       LEFT JOIN inventory inv ON i.id = inv.item_id
       LEFT JOIN categories c ON i.category_id = c.id
