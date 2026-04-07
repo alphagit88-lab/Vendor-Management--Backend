@@ -19,7 +19,12 @@ class Order {
       if (items && items.length > 0) {
         const Inventory = require('./Inventory');
         for (const item of items) {
-          // 2. Insert Order Item (matched to production columns: order_id, item_id, quantity, unit_price, subtotal)
+          // 2. Strict Business Validation: Max 10 per item
+          if (Math.abs(item.quantity) > 10) {
+            throw new Error(`Quantity limit exceeded for item ${item.item_id}. Maximum allowed is 10.`);
+          }
+
+          // 3. Insert Order Item
           const itemQuery = `
             INSERT INTO order_items (order_id, item_id, quantity, unit_price, subtotal)
             VALUES ($1, $2, $3, $4, $5)
@@ -27,7 +32,7 @@ class Order {
           const itemValues = [order.id, item.item_id, item.quantity, item.price, item.subtotal];
           await client.query(itemQuery, itemValues);
 
-          // 3. Deduct from Salesperson Inventory
+          // 4. Deduct from Salesperson Inventory (Sub-Inventory)
           await Inventory.updateStock({
             item_id: item.item_id,
             quantity: -Math.abs(item.quantity),
@@ -50,28 +55,29 @@ class Order {
   }
 
   static async findById(id) {
-    const orderQuery = `
-      SELECT o.*, c.name as customer_name, u.name as user_name
+    const numericId = parseInt(id);
+    const query = `
+      SELECT o.*, c.name as customer_name, u.name as user_name,
+      COALESCE((
+        SELECT json_agg(json_build_object(
+          'id', oi.id,
+          'item_id', oi.item_id,
+          'item_name', i.description_name,
+          'quantity', oi.quantity,
+          'unit_price', oi.unit_price,
+          'subtotal', oi.subtotal
+        ))
+        FROM order_items oi
+        JOIN items i ON oi.item_id = i.id
+        WHERE oi.order_id = o.id
+      ), '[]'::json) as items
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
       LEFT JOIN users u ON o.user_id = u.id
       WHERE o.id = $1
     `;
-    const orderResult = await pool.query(orderQuery, [id]);
-    const order = orderResult.rows[0];
-
-    if (order) {
-      const itemsQuery = `
-        SELECT oi.*, i.name as item_name
-        FROM order_items oi
-        JOIN items i ON oi.item_id = i.id
-        WHERE oi.order_id = $1
-      `;
-      const itemsResult = await pool.query(itemsQuery, [id]);
-      order.items = itemsResult.rows;
-    }
-
-    return order;
+    const result = await pool.query(query, [numericId]);
+    return result.rows[0];
   }
 
   static async findAll(userId = null) {

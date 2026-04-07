@@ -63,3 +63,47 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+exports.getActivities = async (req, res) => {
+  try {
+    const queries = [
+      // Recent Users
+      pool.query(`
+        SELECT id, name as title, 'user' as type, created_at 
+        FROM users 
+        WHERE role != 'admin' 
+        ORDER BY created_at DESC LIMIT 5
+      `),
+      // Recent Customers/Shops
+      pool.query(`
+        SELECT id, name as title, 'customer' as type, created_at 
+        FROM customers 
+        ORDER BY created_at DESC LIMIT 5
+      `),
+      // Recent Orders
+      pool.query(`
+        SELECT o.id, o.order_number as title, 'order' as type, o.created_at, c.name as subtitle
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.id
+        ORDER BY o.created_at DESC LIMIT 5
+      `)
+    ];
+
+    const [users, customers, orders] = await Promise.all(queries);
+
+    const activities = [
+      ...users.rows.map(u => ({ ...u, description: 'New staff member registered' })),
+      ...customers.rows.map(c => ({ ...c, description: 'New service shop added' })),
+      ...orders.rows.map(o => ({ ...o, description: `Order placed for ${o.subtitle}` }))
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 10);
+
+    res.json({
+      success: true,
+      data: activities
+    });
+  } catch (err) {
+    console.error('Error fetching dashboard activities:', err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
