@@ -14,14 +14,21 @@ exports.getOrders = async (req, res) => {
 exports.getOrder = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(`🔍 FETCHING ORDER DETAIL: ${id}`);
     const order = await Order.findById(id);
     if (!order) {
+      console.warn(`⚠️ ORDER NOT FOUND: ${id}`);
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
+    console.log(`✅ ORDER RETRIEVED: ${id}`);
     res.json({ success: true, data: order });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    console.error('🔴 GET ORDER ERROR details:', {
+      message: error.message,
+      stack: error.stack,
+      id: req.params.id
+    });
+    res.status(500).json({ success: false, message: 'Server Error', detail: error.message, stack: error.stack });
   }
 };
 
@@ -49,8 +56,13 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({ success: true, data: newOrder });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    console.error('🔴 CREATE ORDER ERROR:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server Error', 
+      detail: error.message,
+      stack: error.stack 
+    });
   }
 };
 

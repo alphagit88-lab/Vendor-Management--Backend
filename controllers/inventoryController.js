@@ -37,7 +37,8 @@ exports.updateStock = async (req, res) => {
 exports.getLogs = async (req, res) => {
   try {
     const { item_id } = req.query;
-    const logs = await Inventory.getLogs(item_id);
+    const salesperson_id = req.user.role === 'admin' ? null : req.user.id;
+    const logs = await Inventory.getLogs(item_id, salesperson_id);
     res.json({ success: true, data: logs });
   } catch (error) {
     console.error(error);
