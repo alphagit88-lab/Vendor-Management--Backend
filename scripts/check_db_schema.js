@@ -31,6 +31,24 @@ async function checkSchema() {
     `);
     console.table(salesCons.rows);
 
+    // 4. Check Columns for inventory
+    console.log("\n🧐 Checking 'inventory' columns:");
+    const invCols = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'inventory'
+    `);
+    console.table(invCols.rows);
+
+    // 5. Check Columns for salesperson_inventory
+    console.log("\n🧐 Checking 'salesperson_inventory' columns:");
+    const salesCols = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'salesperson_inventory'
+    `);
+    console.table(salesCols.rows);
+
   } catch (err) {
     console.error("🔴 SCHEMA CHECK ERROR:", err.message);
   } finally {
