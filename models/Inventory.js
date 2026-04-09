@@ -56,7 +56,7 @@ class Inventory {
         await client.query(`
           INSERT INTO inventory (item_id, quantity, updated_at)
           VALUES ($1, $2, NOW())
-          ON CONFLICT (item_id) 
+          ON CONFLICT ON CONSTRAINT inventory_item_id_unique 
           DO UPDATE SET 
             quantity = inventory.quantity + EXCLUDED.quantity,
             updated_at = NOW()
@@ -81,7 +81,7 @@ class Inventory {
         await client.query(`
             INSERT INTO salesperson_inventory (item_id, user_id, quantity, updated_at)
             VALUES ($1, $2, $3, NOW())
-            ON CONFLICT (item_id, user_id)
+            ON CONFLICT ON CONSTRAINT salesperson_item_user_unique
             DO UPDATE SET 
                 quantity = salesperson_inventory.quantity + EXCLUDED.quantity,
                 updated_at = NOW()
