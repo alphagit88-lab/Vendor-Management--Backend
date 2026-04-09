@@ -49,6 +49,15 @@ async function checkSchema() {
     `);
     console.table(salesCols.rows);
 
+    // 6. Check Index Definitions
+    console.log("\n🧐 Checking Index Definitions:");
+    const indexDefs = await client.query(`
+      SELECT indexname, indexdef 
+      FROM pg_indexes 
+      WHERE tablename IN ('inventory', 'salesperson_inventory')
+    `);
+    console.table(indexDefs.rows);
+
   } catch (err) {
     console.error("🔴 SCHEMA CHECK ERROR:", err.message);
   } finally {
