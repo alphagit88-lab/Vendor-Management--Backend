@@ -80,6 +80,71 @@ class Order {
     return result.rows[0];
   }
 
+  static async findBillById(id) {
+    const numericId = parseInt(id, 10);
+    const orderQuery = `
+      SELECT
+        o.id,
+        o.order_number,
+        o.customer_id,
+        o.user_id,
+        o.total_amount,
+        o.total_credits,
+        o.total_deposit,
+        o.status,
+        o.notes,
+        o.load_number,
+        o.created_at,
+        c.account_id,
+        c.dba,
+        c.name as customer_name,
+        c.address as customer_address,
+        c.phone as customer_phone,
+        c.registered_company_name,
+        c.permit_numbers,
+        c.payment_type,
+        c.tobacco_permit_number,
+        c.tobacco_expire_date,
+        c.sales_tax_id,
+        u.name as salesrep_name,
+        u.phone as salesrep_phone,
+        u.inventory_location as salesrep_location
+      FROM orders o
+      JOIN customers c ON o.customer_id = c.id
+      LEFT JOIN users u ON o.user_id = u.id
+      WHERE o.id = $1
+    `;
+    const orderResult = await pool.query(orderQuery, [numericId]);
+    const order = orderResult.rows[0];
+
+    if (!order) {
+      return null;
+    }
+
+    const itemsQuery = `
+      SELECT
+        oi.id,
+        oi.item_id,
+        oi.quantity,
+        oi.unit_price,
+        oi.subtotal,
+        i.item_number,
+        i.description_name,
+        i.quantity_size,
+        i.upc
+      FROM order_items oi
+      LEFT JOIN items i ON oi.item_id = i.id
+      WHERE oi.order_id = $1
+      ORDER BY oi.id ASC
+    `;
+    const itemResult = await pool.query(itemsQuery, [numericId]);
+
+    return {
+      ...order,
+      items: itemResult.rows,
+    };
+  }
+
   static async findAll(userId = null) {
     let query = `
       SELECT o.*, c.name as customer_name, u.name as user_name

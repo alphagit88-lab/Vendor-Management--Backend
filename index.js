@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 // Force reload trigger
 const cors = require('cors');
 
@@ -14,6 +15,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
+const uploadsDir = path.join(__dirname, 'uploads');
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
@@ -32,6 +34,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/files', express.static(uploadsDir));
 
 // Root route
 app.get('/', (req, res) => {
