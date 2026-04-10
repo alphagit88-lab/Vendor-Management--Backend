@@ -4,7 +4,6 @@ node_modules/
 .DS_Store
 dist/
 build/
-uploads/bills/
 
 # Firebase / Google Cloud secrets
 binrental-firebase-adminsdk-*.json
