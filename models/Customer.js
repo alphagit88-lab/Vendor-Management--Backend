@@ -21,9 +21,24 @@ class Customer {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
       RETURNING *
     `;
-    // Backward compatibility for internal name
-    const internal_name = dba || final_account_id;
-    const values = [internal_name, address, phone, final_account_id, permit_numbers, registered_company_name, dba, email, sales_tax_id, has_cigarette_permit, tobacco_permit_number, tobacco_expire_date, payment_type, latitude, longitude];
+    // Sanitize values: convert empty strings to null for database compatibility
+    const values = [
+      dba || final_account_id, // name
+      address, 
+      phone, 
+      final_account_id, 
+      permit_numbers || null, 
+      registered_company_name || null, 
+      dba || null, 
+      email || null, 
+      sales_tax_id || null, 
+      has_cigarette_permit || false, 
+      tobacco_permit_number || null, 
+      (tobacco_expire_date && tobacco_expire_date !== "") ? tobacco_expire_date : null, 
+      payment_type || null, 
+      latitude || null, 
+      longitude || null
+    ];
     const result = await pool.query(query, values);
     return result.rows[0];
   }
