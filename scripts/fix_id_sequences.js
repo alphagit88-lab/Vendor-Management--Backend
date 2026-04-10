@@ -8,7 +8,9 @@ async function fixSequences() {
     { name: 'categories', id_col: 'id' },
     { name: 'orders', id_col: 'id' },
     { name: 'order_items', id_col: 'id' },
-    { name: 'inventory_transactions', id_col: 'id' }
+    { name: 'inventory', id_col: 'id' },
+    { name: 'salesperson_inventory', id_col: 'id' },
+    { name: 'inventory_logs', id_col: 'id' }
   ];
 
   const client = await pool.connect();
