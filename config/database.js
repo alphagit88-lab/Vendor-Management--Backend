@@ -1,6 +1,6 @@
 require('dotenv').config();
-const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
-const isEC2 = process.env.DB_HOST && !process.env.DATABASE_URL;
+const isVercel = Boolean(process.env.VERCEL);
+const isEC2 = Boolean(process.env.DB_HOST && !process.env.DATABASE_URL);
 let pool;
 
 if (isVercel) {

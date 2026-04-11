@@ -1,5 +1,8 @@
 const Order = require('../models/Order');
-const { generateOrderBill } = require('../utils/billGenerator');
+const {
+  buildOrderBillMeta,
+  generateOrderBillBuffer,
+} = require('../utils/billGenerator');
 
 const buildBill = async (orderId) => {
   const billOrder = await Order.findBillById(orderId);
@@ -8,7 +11,7 @@ const buildBill = async (orderId) => {
     return null;
   }
 
-  const bill = await generateOrderBill(billOrder);
+  const bill = buildOrderBillMeta(billOrder);
 
   return {
     order_id: billOrder.id,
@@ -16,6 +19,23 @@ const buildBill = async (orderId) => {
     customer_name: billOrder.dba || billOrder.customer_name,
     ...bill,
   };
+};
+
+const getAuthorizedBillOrder = async (req, res) => {
+  const { id } = req.params;
+  const order = await Order.findBillById(id);
+
+  if (!order) {
+    res.status(404).json({ success: false, message: 'Order not found' });
+    return null;
+  }
+
+  if (req.user.role !== 'admin' && Number(order.user_id) !== Number(req.user.id)) {
+    res.status(403).json({ success: false, message: 'Access denied' });
+    return null;
+  }
+
+  return order;
 };
 
 exports.getOrders = async (req, res) => {
@@ -78,7 +98,8 @@ exports.createOrder = async (req, res) => {
       bill = await buildBill(newOrder.id);
     } catch (billError) {
       console.error('[orders] bill generation error:', billError);
-      bill_generation_error = 'Order created successfully, but bill generation failed';
+      bill_generation_error =
+        billError.message || 'Order created successfully, but bill generation failed';
     }
 
     res.status(201).json({
@@ -100,18 +121,10 @@ exports.createOrder = async (req, res) => {
 
 exports.generateBill = async (req, res) => {
   try {
-    const { id } = req.params;
-    const order = await Order.findBillById(id);
-
+    const order = await getAuthorizedBillOrder(req, res);
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return;
     }
-
-    if (req.user.role !== 'admin' && Number(order.user_id) !== Number(req.user.id)) {
-      return res.status(403).json({ success: false, message: 'Access denied' });
-    }
-
-    const bill = await generateOrderBill(order);
 
     res.json({
       success: true,
@@ -119,7 +132,7 @@ exports.generateBill = async (req, res) => {
         order_id: order.id,
         order_number: order.order_number,
         customer_name: order.dba || order.customer_name,
-        ...bill,
+        ...buildOrderBillMeta(order),
       },
     });
   } catch (error) {
@@ -127,6 +140,33 @@ exports.generateBill = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to generate bill',
+      detail: error.message,
+    });
+  }
+};
+
+exports.downloadBillPdf = async (req, res) => {
+  try {
+    const order = await getAuthorizedBillOrder(req, res);
+    if (!order) {
+      return;
+    }
+
+    const pdfBuffer = await generateOrderBillBuffer(order);
+    const billMeta = buildOrderBillMeta(order);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${billMeta.file_name}"`,
+    );
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('[orders] bill pdf download error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate bill PDF',
       detail: error.message,
     });
   }

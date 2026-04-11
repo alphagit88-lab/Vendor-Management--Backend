@@ -4,6 +4,7 @@ const orderController = require('../controllers/orderController');
 const { authenticate, verifyAdmin } = require('../middleware/authMiddleware');
 
 router.get('/', authenticate, orderController.getOrders);
+router.get('/:id/bill/pdf', authenticate, orderController.downloadBillPdf);
 router.get('/:id/bill', authenticate, orderController.generateBill);
 router.get('/:id', authenticate, orderController.getOrder);
 router.post('/', authenticate, orderController.createOrder);

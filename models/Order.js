@@ -88,7 +88,7 @@ class Order {
         WHERE oi.order_id = o.id
       ), '[]'::json) as items
       FROM orders o
-      JOIN customers c ON o.customer_id = c.id
+      LEFT JOIN customers c ON o.customer_id = c.id
       LEFT JOIN users u ON o.user_id = u.id
       WHERE o.id = $1
     `;
@@ -126,7 +126,7 @@ class Order {
         u.phone as salesrep_phone,
         u.inventory_location as salesrep_location
       FROM orders o
-      JOIN customers c ON o.customer_id = c.id
+      LEFT JOIN customers c ON o.customer_id = c.id
       LEFT JOIN users u ON o.user_id = u.id
       WHERE o.id = $1
     `;
