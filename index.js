@@ -14,6 +14,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
+app.set('trust proxy', true);
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
