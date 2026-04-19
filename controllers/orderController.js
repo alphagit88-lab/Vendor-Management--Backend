@@ -78,6 +78,7 @@ exports.createOrder = async (req, res) => {
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       billUrl = `${baseUrl}/uploads/bills/${fileName}`;
+      console.log(`📄 BILL GENERATED: ${billUrl}`);
     } catch (billError) {
       console.error('⚠️ Bill Generation failed:', billError.message);
     }
