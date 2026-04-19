@@ -38,8 +38,9 @@ BEGIN
         ALTER TABLE shops ADD COLUMN payment_type TEXT DEFAULT 'COD';
     END IF;
 
-    -- Rename logic (Ensure contact exists before renaming)
-    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='shops' AND column_name='contact') THEN
+    -- Rename logic (Ensure target doesn't exist before renaming)
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='shops' AND column_name='contact') 
+       AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='shops' AND column_name='phone') THEN
         ALTER TABLE shops RENAME COLUMN contact TO phone;
     END IF;
 END $$;

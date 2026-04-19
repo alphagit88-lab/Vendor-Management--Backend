@@ -19,9 +19,14 @@ class Order {
       if (items && items.length > 0) {
         const Inventory = require('./Inventory');
         for (const item of items) {
+          const itemId = item.item_id || item.itemId;
+          const quantity = parseInt(item.quantity || 0);
+          const unitPrice = item.price || item.unitPrice || item.unit_price;
+          const subtotal = parseFloat(item.subtotal || 0);
+
           // 2. Strict Business Validation: Max 10 per item
-          if (Math.abs(item.quantity) > 10) {
-            throw new Error(`Quantity limit exceeded for item ${item.item_id}. Maximum allowed is 10.`);
+          if (Math.abs(quantity) > 10) {
+            throw new Error(`Quantity limit exceeded for item ${itemId}. Maximum allowed is 10.`);
           }
 
           // 3. Insert Order Item
@@ -29,13 +34,13 @@ class Order {
             INSERT INTO order_items (order_id, item_id, quantity, unit_price, subtotal)
             VALUES ($1, $2, $3, $4, $5)
           `;
-          const itemValues = [order.id, item.item_id, item.quantity, item.price, item.subtotal];
+          const itemValues = [order.id, itemId, quantity, unitPrice, subtotal];
           await client.query(itemQuery, itemValues);
 
           // 4. Deduct from Salesperson Inventory (Sub-Inventory)
           await Inventory.updateStock({
-            item_id: item.item_id,
-            quantity: -Math.abs(item.quantity),
+            item_id: itemId,
+            quantity: -Math.abs(quantity),
             type: 'SALE',
             notes: `Sale - Order #${order_number}`,
             salesperson_id: user_id, 

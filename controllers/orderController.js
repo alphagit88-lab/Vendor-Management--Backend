@@ -34,16 +34,16 @@ exports.getOrder = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { customer_id, user_id, items, notes, load_number, total_credits, total_deposit } = req.body;
+    const { customerId, customer_id, user_id, items, notes, load_number, total_credits, total_deposit } = req.body;
     
     // Simple order number generation (e.g., ORD-timestamp)
     const order_number = `ORD-${Date.now().toString().slice(-8)}`;
 
-    const total_amount = items.reduce((acc, item) => acc + item.subtotal, 0);
+    const total_amount = items.reduce((acc, item) => acc + parseFloat(item.subtotal || 0), 0);
 
     const newOrder = await Order.create({
       order_number,
-      customer_id,
+      customer_id: customer_id || customerId,
       user_id: user_id || req.user.id,
       total_amount,
       total_credits: total_credits || 0,
@@ -54,7 +54,43 @@ exports.createOrder = async (req, res) => {
       items
     });
 
-    res.status(201).json({ success: true, data: newOrder });
+    // --- Generate Bill PDF ---
+    let billUrl = null;
+    try {
+      const { generateBill } = require('../utils/billGenerator');
+      
+      // Fetch full order with customer details for the bill
+      const fullOrder = await Order.findById(newOrder.id);
+      
+      const fileName = await generateBill({
+        order: fullOrder,
+        customer: {
+          name: fullOrder.customer_name,
+          address: fullOrder.customer_address || 'Address not available',
+          phone: fullOrder.customer_phone || '',
+          account_id: fullOrder.account_id,
+          tobacco_permit_number: fullOrder.tobacco_permit_number
+        },
+        items: fullOrder.items,
+        salesperson: { name: fullOrder.user_name },
+        shop: {} // Will use defaults in generator
+      });
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      billUrl = `${baseUrl}/uploads/bills/${fileName}`;
+    } catch (billError) {
+      console.error('⚠️ Bill Generation failed:', billError.message);
+    }
+
+    res.status(201).json({ 
+      success: true, 
+      data: newOrder,
+      bill: billUrl ? {
+        url: billUrl,
+        file_name: `bill_${order_number}.pdf`
+      } : null,
+      bill_generation_error: billUrl ? null : 'Failed to generate receipt'
+    });
   } catch (error) {
     console.error('🔴 CREATE ORDER ERROR:', error);
     res.status(500).json({ 
