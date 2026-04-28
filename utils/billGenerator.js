@@ -3,42 +3,11 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Generates a thermal-style bill PDF
- * @param {Object} data - The order and customer data
- * @returns {Promise<string>} - The path to the generated PDF
+ * Draws the actual content onto a PDF document.
+ * This is separated so we can call it twice: once to measure, once to save.
  */
-const generateBill = async (data) => {
+const drawBillContent = (doc, data) => {
   const { order, customer, items, salesperson, shop } = data;
-  
-  // Create uploads directory if it doesn't exist
-  const billsDir = path.join(__dirname, '..', 'uploads', 'bills');
-  if (!fs.existsSync(billsDir)) {
-    fs.mkdirSync(billsDir, { recursive: true });
-  }
-
-  const fileName = `bill_${order.order_number}.pdf`;
-  const filePath = path.join(billsDir, fileName);
-
-  // Thermal printer dimensions (approx 72mm width)
-  const pageWidth = 204;
-  
-  // Dynamic height calculation based on content
-  const headerHeight = 110;
-  const customerHeight = 140;
-  const itemsHeight = items.length * 20;
-  const totalsHeight = 110;
-  const signatureHeight = 80;
-  const legalHeight = 140;
-  
-  const pageHeight = headerHeight + customerHeight + itemsHeight + totalsHeight + signatureHeight + legalHeight;
-
-  const doc = new PDFDocument({
-    size: [pageWidth, pageHeight],
-    margins: { top: 10, bottom: 0, left: 10, right: 10 }
-  });
-
-  const stream = fs.createWriteStream(filePath);
-  doc.pipe(stream);
 
   // --- HEADER ---
   doc.fillColor('#000000');
@@ -140,7 +109,42 @@ const generateBill = async (data) => {
   doc.fontSize(5.5);
   const legalText = "THIS IS AN OFFER. BY SIGNING THIS OFFER, YOU AGREE THAT YOU WILL REFRAIN FROM SELLING THE PRODUCTS CONVEYED TO YOU BY THIS OFFER TO OTHER RETAILERS FOR RESALE...";
   doc.text(legalText, 10, doc.y, { align: 'justify', width: 184 });
+  
+  // Return the final Y position
+  return doc.y;
+};
 
+/**
+ * Generates a thermal-style bill PDF with PERFECT auto-height.
+ */
+const generateBill = async (data) => {
+  const { order } = data;
+  
+  const billsDir = path.join(__dirname, '..', 'uploads', 'bills');
+  if (!fs.existsSync(billsDir)) fs.mkdirSync(billsDir, { recursive: true });
+
+  const fileName = `bill_${order.order_number}.pdf`;
+  const filePath = path.join(billsDir, fileName);
+  const pageWidth = 204;
+
+  // --- PASS 1: Measure exact content height ---
+  // We use a dummy document with a huge height to prevent pagination
+  const dummyDoc = new PDFDocument({
+    size: [pageWidth, 5000],
+    margins: { top: 10, bottom: 10, left: 10, right: 10 }
+  });
+  const finalY = drawBillContent(dummyDoc, data);
+  const perfectHeight = Math.ceil(finalY + 15); // Add a tiny 15px buffer for the cut
+
+  // --- PASS 2: Generate the real PDF with the exact height ---
+  const doc = new PDFDocument({
+    size: [pageWidth, perfectHeight],
+    margins: { top: 10, bottom: 10, left: 10, right: 10 }
+  });
+
+  const stream = fs.createWriteStream(filePath);
+  doc.pipe(stream);
+  drawBillContent(doc, data);
   doc.end();
 
   return new Promise((resolve, reject) => {
