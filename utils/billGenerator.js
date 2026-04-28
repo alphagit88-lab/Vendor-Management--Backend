@@ -15,7 +15,7 @@ const drawBillContent = (doc, data) => {
   doc.fontSize(6).text(shop.address || 'PO BOX 841521, DALLAS, TX 75284', { align: 'center' });
   doc.text(`Phone: ${shop.phone || '713-869-4361'}`, { align: 'center' });
   doc.moveDown(0.3);
-  
+
   const orderDate = new Date(order.created_at);
   doc.text(orderDate.toLocaleString(), { align: 'center' });
   doc.moveDown(1);
@@ -46,7 +46,7 @@ const drawBillContent = (doc, data) => {
   doc.text('QTY', 32, tableTop);
   doc.text('DESCRIPTION', 52, tableTop);
   doc.text('AMOUNT', 160, tableTop, { align: 'right', width: 34 });
-  
+
   doc.strokeColor('#000000');
   doc.moveTo(10, tableTop + 10).lineTo(194, tableTop + 10).stroke();
   doc.moveDown(1.5);
@@ -57,13 +57,13 @@ const drawBillContent = (doc, data) => {
     doc.fontSize(5.5);
     doc.text(item.item_number || 'N/A', 10, startY);
     doc.text(item.quantity.toString(), 32, startY);
-    
+
     // Description can span multiple lines
     doc.text(item.item_name || item.description_name, 52, startY, { width: 108 });
-    
+
     const lineTotal = parseFloat(item.subtotal).toFixed(2);
     doc.text(lineTotal, 160, startY, { align: 'right', width: 34 });
-    
+
     doc.moveDown(0.3);
   });
 
@@ -74,7 +74,7 @@ const drawBillContent = (doc, data) => {
   // --- TOTALS ---
   const totalsX = 110;
   doc.fontSize(7);
-  
+
   let currentY = doc.y;
   doc.text('Total Sales:', totalsX, currentY);
   doc.text(parseFloat(order.total_amount).toFixed(2), 160, currentY, { align: 'right', width: 34 });
@@ -106,11 +106,11 @@ const drawBillContent = (doc, data) => {
   doc.fontSize(7);
   doc.text('Customer Signature:', 10, sigY);
   doc.strokeColor('#000000').moveTo(10, sigY + 30).lineTo(90, sigY + 30).stroke();
-  
+
   doc.text('Driver Signature:', 110, sigY);
   doc.strokeColor('#000000').moveTo(110, sigY + 30).lineTo(190, sigY + 30).stroke();
-  doc.moveDown(4); // Extra space at the very bottom
-  
+  doc.moveDown(1); // Minimal space at the very bottom
+
   // Return the final Y position
   return doc.y;
 };
@@ -120,7 +120,7 @@ const drawBillContent = (doc, data) => {
  */
 const generateBill = async (data) => {
   const { order } = data;
-  
+
   const billsDir = path.join(__dirname, '..', 'uploads', 'bills');
   if (!fs.existsSync(billsDir)) fs.mkdirSync(billsDir, { recursive: true });
 
