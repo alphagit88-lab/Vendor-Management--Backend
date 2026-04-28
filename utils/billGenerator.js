@@ -21,8 +21,8 @@ const generateBill = async (data) => {
 
   // Thermal printer dimensions (approx 72mm width)
   const pageWidth = 204;
-  // Refined height estimate to avoid large empty spaces
-  const pageHeight = 320 + (items.length * 18);
+  // Safer height estimate to avoid overlapping/new pages
+  const pageHeight = 520 + (items.length * 25);
 
   const doc = new PDFDocument({
     size: [pageWidth, pageHeight],
