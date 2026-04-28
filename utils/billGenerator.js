@@ -21,12 +21,20 @@ const generateBill = async (data) => {
 
   // Thermal printer dimensions (approx 72mm width)
   const pageWidth = 204;
-  // Safer height estimate to avoid overlapping/new pages
-  const pageHeight = 520 + (items.length * 25);
+  
+  // Dynamic height calculation based on content
+  const headerHeight = 110;
+  const customerHeight = 140;
+  const itemsHeight = items.length * 20;
+  const totalsHeight = 110;
+  const signatureHeight = 80;
+  const legalHeight = 140;
+  
+  const pageHeight = headerHeight + customerHeight + itemsHeight + totalsHeight + signatureHeight + legalHeight;
 
   const doc = new PDFDocument({
     size: [pageWidth, pageHeight],
-    margins: { top: 10, bottom: 5, left: 10, right: 10 }
+    margins: { top: 10, bottom: 0, left: 10, right: 10 }
   });
 
   const stream = fs.createWriteStream(filePath);
