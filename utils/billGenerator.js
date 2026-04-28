@@ -20,14 +20,13 @@ const generateBill = async (data) => {
   const filePath = path.join(billsDir, fileName);
 
   // Thermal printer dimensions (approx 72mm width)
-  // 72mm = 204 points
-  // Height is estimated based on items, or just use a long page
   const pageWidth = 204;
-  const pageHeight = 600 + (items.length * 40); // Dynamic height estimate
+  // Refined height estimate to avoid large empty spaces
+  const pageHeight = 320 + (items.length * 18);
 
   const doc = new PDFDocument({
     size: [pageWidth, pageHeight],
-    margins: { top: 10, bottom: 10, left: 10, right: 10 }
+    margins: { top: 10, bottom: 5, left: 10, right: 10 }
   });
 
   const stream = fs.createWriteStream(filePath);
@@ -127,7 +126,7 @@ const generateBill = async (data) => {
   
   doc.text('Driver Signature:', 110, sigY);
   doc.strokeColor('#000000').moveTo(110, sigY + 30).lineTo(190, sigY + 30).stroke();
-  doc.moveDown(4);
+  doc.moveDown(1);
 
   // --- FOOTER / LEGAL ---
   doc.fontSize(5.5);
