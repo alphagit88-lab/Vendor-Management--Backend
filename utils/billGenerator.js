@@ -109,7 +109,7 @@ const drawBillContent = (doc, data) => {
 
   doc.text('Driver Signature:', 110, sigY);
   doc.strokeColor('#000000').moveTo(110, sigY + 30).lineTo(190, sigY + 30).stroke();
-  doc.moveDown(1); // Minimal space at the very bottom
+  doc.moveDown(2); // Minimal space at the very bottom
 
   // Return the final Y position
   return doc.y;
