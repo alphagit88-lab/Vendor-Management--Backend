@@ -95,6 +95,12 @@ const drawBillContent = (doc, data) => {
   doc.text(parseFloat(order.total_amount).toFixed(2), 160, currentY, { align: 'right', width: 34 });
   doc.moveDown(1);
 
+  // --- FOOTER / LEGAL ---
+  doc.fontSize(5.5);
+  const legalText = "THIS IS AN OFFER. BY SIGNING THIS OFFER, YOU AGREE THAT YOU WILL REFRAIN FROM SELLING THE PRODUCTS CONVEYED TO YOU BY THIS OFFER TO OTHER RETAILERS FOR RESALE...";
+  doc.text(legalText, 10, doc.y, { align: 'justify', width: 184 });
+  doc.moveDown(2);
+
   // --- SIGNATURES ---
   const sigY = doc.y;
   doc.fontSize(7);
@@ -103,12 +109,7 @@ const drawBillContent = (doc, data) => {
   
   doc.text('Driver Signature:', 110, sigY);
   doc.strokeColor('#000000').moveTo(110, sigY + 30).lineTo(190, sigY + 30).stroke();
-  doc.moveDown(1);
-
-  // --- FOOTER / LEGAL ---
-  doc.fontSize(5.5);
-  const legalText = "THIS IS AN OFFER. BY SIGNING THIS OFFER, YOU AGREE THAT YOU WILL REFRAIN FROM SELLING THE PRODUCTS CONVEYED TO YOU BY THIS OFFER TO OTHER RETAILERS FOR RESALE...";
-  doc.text(legalText, 10, doc.y, { align: 'justify', width: 184 });
+  doc.moveDown(4); // Extra space at the very bottom
   
   // Return the final Y position
   return doc.y;
