@@ -110,30 +110,30 @@ const drawBillContent = (doc, data) => {
   
   // 1. Customer Signature
   doc.text('Customer Signature:', 10, sigY);
+  doc.strokeColor('#000000').moveTo(10, sigY + 40).lineTo(90, sigY + 40).stroke();
+  
   if (data.customerSignature) {
     try {
       const customerSigBuffer = Buffer.from(data.customerSignature.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+      // Position slightly above the line
       doc.image(customerSigBuffer, 10, sigY + 10, { width: 80, height: 30 });
     } catch (e) {
       console.error('Error rendering customer signature:', e);
-      doc.strokeColor('#000000').moveTo(10, sigY + 40).lineTo(90, sigY + 40).stroke();
     }
-  } else {
-    doc.strokeColor('#000000').moveTo(10, sigY + 40).lineTo(90, sigY + 40).stroke();
   }
 
   // 2. Driver Signature
   doc.text('Driver Signature:', 110, sigY);
+  doc.strokeColor('#000000').moveTo(110, sigY + 40).lineTo(190, sigY + 40).stroke();
+
   if (data.driverSignature) {
     try {
       const driverSigBuffer = Buffer.from(data.driverSignature.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+      // Position slightly above the line
       doc.image(driverSigBuffer, 110, sigY + 10, { width: 80, height: 30 });
     } catch (e) {
       console.error('Error rendering driver signature:', e);
-      doc.strokeColor('#000000').moveTo(110, sigY + 40).lineTo(190, sigY + 40).stroke();
     }
-  } else {
-    doc.strokeColor('#000000').moveTo(110, sigY + 40).lineTo(190, sigY + 40).stroke();
   }
 
   doc.moveDown(4); // Space for signatures
