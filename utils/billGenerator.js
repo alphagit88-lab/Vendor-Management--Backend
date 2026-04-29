@@ -93,7 +93,7 @@ const drawBillContent = (doc, data) => {
   doc.moveDown(0.4);
 
   currentY = doc.y;
-  doc.font('Helvetica-Bold').fontSize(9).text('Invoice Total:', totalsX, currentY, { weight: 'bold' });
+  doc.font('Helvetica-Bold').fontSize(8.5).text('Invoice Total:', totalsX, currentY, { weight: 'bold' });
   doc.text(parseFloat(order.total_amount).toFixed(2), 160, currentY, { align: 'right', width: 34 });
   doc.font('Helvetica');
   doc.moveDown(1);
