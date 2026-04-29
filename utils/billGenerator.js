@@ -11,8 +11,8 @@ const drawBillContent = (doc, data) => {
 
   // --- HEADER ---
   doc.fillColor('#000000');
-  doc.fontSize(8).text(shop.name || 'SILVER EAGLE DISTRIBUTORS', { align: 'center', weight: 'bold' });
-  doc.fontSize(6).text(shop.address || 'PO BOX 841521, DALLAS, TX 75284', { align: 'center' });
+  doc.font('Helvetica-Bold').fontSize(12).text(shop.name || 'SILVER EAGLE DISTRIBUTORS', { align: 'center' });
+  doc.font('Helvetica').fontSize(9).text(shop.address || 'PO BOX 841521, DALLAS, TX 75284', { align: 'center' });
   doc.text(`Phone: ${shop.phone || '713-869-4361'}`, { align: 'center' });
   doc.moveDown(0.3);
 
@@ -21,10 +21,10 @@ const drawBillContent = (doc, data) => {
   doc.moveDown(1);
 
   // Invoice Details
-  doc.fontSize(7);
+  doc.fontSize(8);
   doc.text(`Account: ${customer.account_id || 'N/A'}`);
-  doc.fontSize(8).text(customer.name, { weight: 'bold' });
-  doc.fontSize(6).text(customer.address);
+  doc.font('Helvetica-Bold').fontSize(10).text(customer.name);
+  doc.font('Helvetica').fontSize(8).text(customer.address);
   doc.text(customer.phone || '');
   doc.moveDown(0.3);
 
@@ -33,18 +33,19 @@ const drawBillContent = (doc, data) => {
   }
   doc.moveDown(0.5);
 
-  doc.fontSize(7);
-  doc.text(`Invoice#: ${order.order_number}`, { weight: 'bold' });
-  doc.text(`Load: ${order.load_number || 'N/A'}`);
+  doc.fontSize(8);
+  doc.font('Helvetica-Bold').text(`Invoice#: ${order.order_number}`);
+  doc.font('Helvetica').text(`Load: ${order.load_number || 'N/A'}`);
   doc.text(`Salesrep: ${salesperson.name || 'N/A'}`);
   doc.moveDown(0.5);
 
   // --- ITEMS TABLE HEADER ---
   const tableTop = doc.y;
-  doc.fontSize(5.5);
+  doc.fontSize(8);
+  doc.font('Helvetica-Bold');
   doc.text('ITEM#', 10, tableTop);
-  doc.text('QTY', 32, tableTop);
-  doc.text('DESCRIPTION', 52, tableTop);
+  doc.text('QTY', 40, tableTop);
+  doc.text('DESCRIPTION', 65, tableTop);
   doc.text('AMOUNT', 160, tableTop, { align: 'right', width: 34 });
 
   doc.strokeColor('#000000');
@@ -54,12 +55,13 @@ const drawBillContent = (doc, data) => {
   // --- ITEMS ---
   items.forEach(item => {
     const startY = doc.y;
-    doc.fontSize(5.5);
+    doc.fontSize(8);
+    doc.font('Helvetica');
     doc.text(item.item_number || 'N/A', 10, startY);
-    doc.text(item.quantity.toString(), 32, startY);
+    doc.text(item.quantity.toString(), 40, startY);
 
     // Description can span multiple lines
-    doc.text(item.item_name || item.description_name, 52, startY, { width: 108 });
+    doc.text(item.item_name || item.description_name, 65, startY, { width: 95 });
 
     const lineTotal = parseFloat(item.subtotal).toFixed(2);
     doc.text(lineTotal, 160, startY, { align: 'right', width: 34 });
@@ -91,7 +93,7 @@ const drawBillContent = (doc, data) => {
   doc.moveDown(0.4);
 
   currentY = doc.y;
-  doc.fontSize(8).text('Invoice Total:', totalsX, currentY, { weight: 'bold' });
+  doc.font('Helvetica-Bold').fontSize(11).text('Invoice Total:', totalsX, currentY);
   doc.text(parseFloat(order.total_amount).toFixed(2), 160, currentY, { align: 'right', width: 34 });
   doc.moveDown(1);
 
@@ -132,7 +134,7 @@ const generateBill = async (data) => {
   // We use a dummy document with a huge height to prevent pagination
   const dummyDoc = new PDFDocument({
     size: [pageWidth, 5000],
-    margins: { top: 10, bottom: 10, left: 10, right: 10 }
+    margins: { top: 40, bottom: 10, left: 10, right: 10 }
   });
   const finalY = drawBillContent(dummyDoc, data);
   const perfectHeight = Math.ceil(finalY + 15); // Add a tiny 15px buffer for the cut
@@ -140,7 +142,7 @@ const generateBill = async (data) => {
   // --- PASS 2: Generate the real PDF with the exact height ---
   const doc = new PDFDocument({
     size: [pageWidth, perfectHeight],
-    margins: { top: 10, bottom: 10, left: 10, right: 10 }
+    margins: { top: 40, bottom: 10, left: 10, right: 10 }
   });
 
   const stream = fs.createWriteStream(filePath);
