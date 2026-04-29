@@ -34,7 +34,18 @@ exports.getOrder = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
   try {
-    const { customerId, customer_id, user_id, items, notes, load_number, total_credits, total_deposit } = req.body;
+    const { 
+      customerId, 
+      customer_id, 
+      user_id, 
+      items, 
+      notes, 
+      load_number, 
+      total_credits, 
+      total_deposit,
+      customerSignature,
+      driverSignature 
+    } = req.body;
     
     // Simple order number generation (e.g., ORD-timestamp)
     const order_number = `ORD-${Date.now().toString().slice(-8)}`;
@@ -73,7 +84,9 @@ exports.createOrder = async (req, res) => {
         },
         items: fullOrder.items,
         salesperson: { name: fullOrder.user_name },
-        shop: {} // Will use defaults in generator
+        shop: {}, // Will use defaults in generator
+        customerSignature,
+        driverSignature
       });
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
