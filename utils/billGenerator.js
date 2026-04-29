@@ -43,9 +43,9 @@ const drawBillContent = (doc, data) => {
   // --- ITEMS TABLE HEADER ---
   const tableTop = doc.y;
   doc.fontSize(6.5);
-  doc.text('ITEM#', 10, tableTop, { weight: 'bold' });
+  doc.text('ITEM#', 12, tableTop, { weight: 'bold' });
   doc.text('QTY', 32, tableTop, { weight: 'bold' });
-  doc.text('DESCRIPTION', 52, tableTop, { weight: 'bold' });
+  doc.text('DESCRIPTION', 50, tableTop, { weight: 'bold' });
   doc.text('AMOUNT', 160, tableTop, { align: 'right', width: 34, weight: 'bold' });
   doc.fontSize(5.5);
 
