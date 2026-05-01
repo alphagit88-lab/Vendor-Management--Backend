@@ -2,8 +2,9 @@ const Order = require('../models/Order');
 
 exports.getOrders = async (req, res) => {
   try {
+    const { month, year } = req.query;
     const userId = req.user.role === 'admin' ? null : req.user.id;
-    const orders = await Order.findAll(userId);
+    const orders = await Order.findAll(userId, month, year);
     res.json({ success: true, data: orders });
   } catch (error) {
     console.error(error);
@@ -44,7 +45,10 @@ exports.createOrder = async (req, res) => {
       total_credits, 
       total_deposit,
       customerSignature,
-      driverSignature 
+      driverSignature,
+      payment_type,
+      check_number,
+      is_checklist
     } = req.body;
     
     // Simple order number generation (e.g., ORD-timestamp)
@@ -62,6 +66,9 @@ exports.createOrder = async (req, res) => {
       status: 'pending',
       notes,
       load_number,
+      payment_type, // Capture payment type
+      check_number,  // Capture check number
+      is_checklist,  // Capture if it was generated as checklist
       items
     });
 
@@ -86,7 +93,9 @@ exports.createOrder = async (req, res) => {
         salesperson: { name: fullOrder.user_name },
         shop: {}, // Will use defaults in generator
         customerSignature,
-        driverSignature
+        driverSignature,
+        paymentType: payment_type,
+        checkNumber: check_number
       });
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -125,6 +134,47 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
     res.json({ success: true, data: updatedOrder });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+exports.getOrderChecklist = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const orderId = parseInt(id, 10);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ success: false, message: 'Invalid order ID' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    const { generateBill } = require('../utils/billGenerator');
+    const { customerSignature, driverSignature } = req.body || {};
+    
+    const fileName = await generateBill({
+      order: order,
+      customer: {
+        name: order.customer_name,
+        address: order.customer_address || 'Address not available',
+        phone: order.customer_phone || '',
+        account_id: order.account_id,
+        tobacco_permit_number: order.tobacco_permit_number
+      },
+      items: order.items,
+      salesperson: { name: order.user_name },
+      shop: {},
+      customerSignature: customerSignature || order.customer_signature,
+      driverSignature: driverSignature || order.driver_signature,
+      isChecklist: true // SET CHECKLIST MODE
+    });
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const url = `${baseUrl}/uploads/bills/${fileName}`;
+    
+    res.json({ success: true, data: { url, file_name: fileName } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });

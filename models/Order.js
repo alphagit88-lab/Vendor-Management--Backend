@@ -1,18 +1,18 @@
 const pool = require('../config/database');
 
 class Order {
-  static async create({ order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, items }) {
+  static async create({ order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, payment_type, check_number, is_checklist, items }) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       // 1. Transactional Update - orders table (removed non-existent updated_at)
       const orderQuery = `
-        INSERT INTO orders (order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        INSERT INTO orders (order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, payment_type, check_number, is_checklist, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
         RETURNING *
       `;
-      const orderValues = [order_number, customer_id, user_id, total_amount, total_credits || 0, total_deposit || 0, status || 'pending', notes || null, load_number || null];
+      const orderValues = [order_number, customer_id, user_id, total_amount, total_credits || 0, total_deposit || 0, status || 'pending', notes || null, load_number || null, payment_type || null, check_number || null, is_checklist || false];
       const orderResult = await client.query(orderQuery, orderValues);
       const order = orderResult.rows[0];
 
@@ -62,11 +62,18 @@ class Order {
   static async findById(id) {
     const numericId = parseInt(id);
     const query = `
-      SELECT o.*, c.name as customer_name, u.name as user_name,
+      SELECT o.*, 
+             c.name as customer_name, 
+             c.address as customer_address, 
+             c.account_id, 
+             c.phone as customer_phone, 
+             c.tobacco_permit_number,
+             u.name as user_name,
       COALESCE((
         SELECT json_agg(json_build_object(
           'id', oi.id,
           'item_id', oi.item_id,
+          'item_number', i.item_number,
           'item_name', i.description_name,
           'quantity', oi.quantity,
           'unit_price', oi.unit_price,
@@ -85,18 +92,43 @@ class Order {
     return result.rows[0];
   }
 
-  static async findAll(userId = null) {
+  static async findAll(userId = null, month = null, year = null) {
     let query = `
-      SELECT o.*, c.name as customer_name, u.name as user_name
+      SELECT o.*, c.name as customer_name, u.name as user_name,
+      COALESCE((
+        SELECT json_agg(json_build_object(
+          'id', oi.id,
+          'item_id', oi.item_id,
+          'item_number', i.item_number,
+          'item_name', i.description_name,
+          'quantity', oi.quantity,
+          'unit_price', oi.unit_price,
+          'subtotal', oi.subtotal
+        ))
+        FROM order_items oi
+        JOIN items i ON oi.item_id = i.id
+        WHERE oi.order_id = o.id
+      ), '[]'::json) as items
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
       LEFT JOIN users u ON o.user_id = u.id
+      WHERE 1=1
     `;
     const values = [];
+    let paramIndex = 1;
+
     if (userId) {
-      query += ` WHERE o.user_id = $1`;
+      query += ` AND o.user_id = $${paramIndex++}`;
       values.push(userId);
     }
+
+    if (month && year) {
+      query += ` AND EXTRACT(MONTH FROM o.created_at) = $${paramIndex++}`;
+      values.push(month);
+      query += ` AND EXTRACT(YEAR FROM o.created_at) = $${paramIndex++}`;
+      values.push(year);
+    }
+
     query += ` ORDER BY o.created_at DESC`;
     const result = await pool.query(query, values);
     return result.rows;

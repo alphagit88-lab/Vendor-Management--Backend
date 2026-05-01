@@ -7,10 +7,22 @@ const path = require('path');
  * This is separated so we can call it twice: once to measure, once to save.
  */
 const drawBillContent = (doc, data) => {
-  const { order, customer, items, salesperson, shop } = data;
+  const { order, customer, items, salesperson, shop, isChecklist, paymentType, checkNumber } = data;
+
+  doc.moveDown(2);
+
+  // --- CHECKLIST HEADER (IF APPLICABLE) ---
+  if (isChecklist) {
+
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text('***********************************', { align: 'center' });
+    doc.text('*****   NOT AN INVOICE   *****', { align: 'center' });
+    doc.text('*** BILL OF LADING ONLY ***', { align: 'center' });
+    doc.fontSize(8).text('***********************************', { align: 'center' });
+    doc.moveDown(1);
+  }
 
   // --- HEADER ---
-  doc.moveDown(2);
   doc.fillColor('#000000');
   doc.fontSize(10).text(shop.name || 'SILVER EAGLE DISTRIBUTORS', { align: 'center', weight: 'bold' });
   doc.fontSize(7).text(shop.address || 'PO BOX 841521, DALLAS, TX 75284', { align: 'center' });
@@ -21,33 +33,46 @@ const drawBillContent = (doc, data) => {
   doc.text(orderDate.toLocaleString(), { align: 'center' });
   doc.moveDown(1);
 
-  // Invoice Details
+  // --- TOP SECTION (SPLIT LEFT/RIGHT) ---
+  const topY = doc.y;
+
+  // LEFT SIDE: Order Details (Moved from bottom)
   doc.fontSize(7);
-  doc.text(`Account: ${customer.account_id || 'N/A'}`);
-  doc.fontSize(8).text(customer.name, { weight: 'bold' });
-  doc.fontSize(6).text(customer.address);
-  doc.text(customer.phone || '');
-  doc.moveDown(0.3);
+  doc.text(`Invoice#: ${order.order_number}`, 10, topY, { weight: 'bold' });
+  if (order.load_number && order.load_number.toString().trim().toUpperCase() !== 'POS') {
+    doc.text(`Load: ${order.load_number}`);
+  }
+  doc.text(`Salesrep: ${salesperson.name || 'N/A'}`);
+
+  const pType = paymentType || order.payment_type || 'N/A';
+  const cNum = checkNumber || order.check_number ? ` (#${checkNumber || order.check_number})` : '';
+  doc.text(`Payment: ${pType}${cNum}`);
+
+  // RIGHT SIDE: Customer Details (Aligned to right)
+  const rightAlignX = 110;
+  const rightWidth = 84;
+  doc.text(`Account: ${customer.account_id || 'N/A'}`, rightAlignX, topY, { align: 'right', width: rightWidth });
+  doc.fontSize(8).font('Helvetica-Bold').text(customer.name, rightAlignX, doc.y, { align: 'right', width: rightWidth });
+  doc.fontSize(6).font('Helvetica').text(customer.address && customer.address !== 'Address not available' ? customer.address : '', rightAlignX, doc.y, { align: 'right', width: rightWidth });
+  if (customer.phone) {
+    doc.text(customer.phone, rightAlignX, doc.y, { align: 'right', width: rightWidth });
+  }
+
+  doc.moveDown(0.5);
 
   if (customer.tobacco_permit_number) {
-    doc.text(`TABC Permit #: ${customer.tobacco_permit_number}`);
+    doc.fontSize(7).text(`TABC Permit #: ${customer.tobacco_permit_number}`, 10);
   }
-  doc.moveDown(0.5);
-
-  doc.fontSize(7);
-  doc.text(`Invoice#: ${order.order_number}`, { weight: 'bold' });
-  doc.text(`Load: ${order.load_number || 'N/A'}`);
-  doc.text(`Salesrep: ${salesperson.name || 'N/A'}`);
-  doc.moveDown(0.5);
+  doc.moveDown(1.5);
 
   // --- ITEMS TABLE HEADER ---
   const tableTop = doc.y;
-  doc.fontSize(6.5);
-  doc.text('ITEM#', 10, tableTop, { weight: 'bold' });
-  doc.text('QTY', 34, tableTop, { weight: 'bold' });
-  doc.text('DESCRIPTION', 54, tableTop, { weight: 'bold' });
-  doc.text('AMOUNT', 160, tableTop, { align: 'right', width: 34, weight: 'bold' });
-  doc.fontSize(5.5);
+  doc.fontSize(6.5).font('Helvetica-Bold');
+  doc.text('ITEM#', 10, tableTop);
+  doc.text('QTY', 34, tableTop);
+  doc.text('DESCRIPTION', 54, tableTop);
+  doc.text('AMOUNT', 160, tableTop, { align: 'right', width: 34 });
+  doc.fontSize(5.5).font('Helvetica');
 
   doc.strokeColor('#000000');
   doc.moveTo(10, tableTop + 10).lineTo(194, tableTop + 10).stroke();
@@ -93,25 +118,27 @@ const drawBillContent = (doc, data) => {
   doc.moveDown(0.4);
 
   currentY = doc.y;
-  doc.font('Helvetica-Bold').fontSize(8.5).text('Invoice Total:', totalsX, currentY, { weight: 'bold' });
-  doc.text(parseFloat(order.total_amount).toFixed(2), 160, currentY, { align: 'right', width: 34 });
+  doc.font('Helvetica-Bold').fontSize(8.5).text('Invoice Total:', totalsX, currentY);
+  doc.text(parseFloat(order.total_amount || 0).toFixed(2), 160, currentY, { align: 'right', width: 34 });
   doc.font('Helvetica');
   doc.moveDown(1);
 
   // --- FOOTER / LEGAL ---
-  doc.fontSize(5.5);
-  const legalText = "THIS IS AN OFFER. BY SIGNING THIS OFFER, YOU AGREE THAT YOU WILL REFRAIN FROM SELLING THE PRODUCTS CONVEYED TO YOU BY THIS OFFER TO OTHER RETAILERS FOR RESALE...";
-  doc.text(legalText, 10, doc.y, { align: 'justify', width: 184 });
-  doc.moveDown(2);
+  if (!isChecklist) {
+    doc.fontSize(5.5);
+    const legalText = "THIS IS AN OFFER. BY SIGNING THIS OFFER, YOU AGREE THAT YOU WILL REFRAIN FROM SELLING THE PRODUCTS CONVEYED TO YOU BY THIS OFFER TO OTHER RETAILERS FOR RESALE...";
+    doc.text(legalText, 10, doc.y, { align: 'justify', width: 184 });
+    doc.moveDown(2);
+  }
 
   // --- SIGNATURES ---
   const sigY = doc.y;
   doc.fontSize(7);
-  
+
   // 1. Customer Signature
   doc.text('Customer Signature:', 10, sigY);
   doc.strokeColor('#000000').moveTo(10, sigY + 40).lineTo(90, sigY + 40).stroke();
-  
+
   if (data.customerSignature) {
     try {
       const customerSigBuffer = Buffer.from(data.customerSignature.replace(/^data:image\/\w+;base64,/, ""), 'base64');
