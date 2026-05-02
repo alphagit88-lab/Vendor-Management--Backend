@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const Setting = require('../models/Setting');
 
 exports.getOrders = async (req, res) => {
   try {
@@ -48,7 +49,9 @@ exports.createOrder = async (req, res) => {
       driverSignature,
       payment_type,
       check_number,
-      is_checklist
+      is_checklist,
+      clientTimestamp,
+      client_timestamp
     } = req.body;
     
     // Simple order number generation (e.g., ORD-timestamp)
@@ -69,6 +72,7 @@ exports.createOrder = async (req, res) => {
       payment_type, // Capture payment type
       check_number,  // Capture check number
       is_checklist,  // Capture if it was generated as checklist
+      client_timestamp: clientTimestamp || client_timestamp,
       items
     });
 
@@ -79,6 +83,7 @@ exports.createOrder = async (req, res) => {
       
       // Fetch full order with customer details for the bill
       const fullOrder = await Order.findById(newOrder.id);
+      const settings = await Setting.getAll();
       
       const fileName = await generateBill({
         order: fullOrder,
@@ -91,11 +96,12 @@ exports.createOrder = async (req, res) => {
         },
         items: fullOrder.items,
         salesperson: { name: fullOrder.user_name },
-        shop: {}, // Will use defaults in generator
+        shop: settings || {},
         customerSignature,
         driverSignature,
         paymentType: payment_type,
-        checkNumber: check_number
+        checkNumber: check_number,
+        clientTimestamp: clientTimestamp || client_timestamp
       });
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -152,7 +158,8 @@ exports.getOrderChecklist = async (req, res) => {
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
     const { generateBill } = require('../utils/billGenerator');
-    const { customerSignature, driverSignature } = req.body || {};
+    const { customerSignature, driverSignature, clientTimestamp, client_timestamp } = req.body || {};
+    const settings = await Setting.getAll();
     
     const fileName = await generateBill({
       order: order,
@@ -165,10 +172,11 @@ exports.getOrderChecklist = async (req, res) => {
       },
       items: order.items,
       salesperson: { name: order.user_name },
-      shop: {},
+      shop: settings || {},
       customerSignature: customerSignature || order.customer_signature,
       driverSignature: driverSignature || order.driver_signature,
-      isChecklist: true // SET CHECKLIST MODE
+      isChecklist: true, // SET CHECKLIST MODE
+      clientTimestamp: clientTimestamp || client_timestamp
     });
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;

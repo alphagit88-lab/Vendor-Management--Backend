@@ -7,7 +7,7 @@ const path = require('path');
  * This is separated so we can call it twice: once to measure, once to save.
  */
 const drawBillContent = (doc, data) => {
-  const { order, customer, items, salesperson, shop, isChecklist, paymentType, checkNumber } = data;
+  const { order, customer, items, salesperson, shop, isChecklist, paymentType, checkNumber, clientTimestamp } = data;
 
   doc.moveDown(2);
 
@@ -24,12 +24,12 @@ const drawBillContent = (doc, data) => {
 
   // --- HEADER ---
   doc.fillColor('#000000');
-  doc.fontSize(10).text(shop.name || 'SILVER EAGLE DISTRIBUTORS', { align: 'center', weight: 'bold' });
-  doc.fontSize(7).text(shop.address || 'PO BOX 841521, DALLAS, TX 75284', { align: 'center' });
-  doc.text(`Phone: ${shop.phone || '713-869-4361'}`, { align: 'center' });
+  doc.fontSize(10).text(shop.company_name || '', { align: 'center', weight: 'bold' });
+  doc.fontSize(7).text(shop.company_address || '', { align: 'center' });
+  doc.text(`Phone: ${shop.company_phone || ''}`, { align: 'center' });
   doc.moveDown(0.3);
 
-  const orderDate = new Date(order.created_at);
+  const orderDate = clientTimestamp ? new Date(clientTimestamp) : new Date(order.created_at);
   doc.text(orderDate.toLocaleString(), { align: 'center' });
   doc.moveDown(1);
 
@@ -88,7 +88,7 @@ const drawBillContent = (doc, data) => {
     // Description can span multiple lines
     doc.text(item.item_name || item.description_name, 54, startY, { width: 108 });
 
-    const lineTotal = parseFloat(item.subtotal).toFixed(2);
+    const lineTotal = `$${parseFloat(item.subtotal).toFixed(2)}`;
     doc.text(lineTotal, 160, startY, { align: 'right', width: 34 });
 
     doc.moveDown(0.3);
@@ -99,27 +99,27 @@ const drawBillContent = (doc, data) => {
   doc.moveDown(0.5);
 
   // --- TOTALS ---
-  const totalsX = 110;
+  const totalsX = 105;
   doc.fontSize(7);
 
   let currentY = doc.y;
   doc.text('Total Sales:', totalsX, currentY);
-  doc.text(parseFloat(order.total_amount).toFixed(2), 160, currentY, { align: 'right', width: 34 });
+  doc.text(`$${parseFloat(order.total_amount).toFixed(2)}`, 160, currentY, { align: 'right', width: 34 });
   doc.moveDown(0.2);
 
   currentY = doc.y;
   doc.text('Total Credits:', totalsX, currentY);
-  doc.text(parseFloat(order.total_credits || 0).toFixed(2), 160, currentY, { align: 'right', width: 34 });
+  doc.text(`$${parseFloat(order.total_credits || 0).toFixed(2)}`, 160, currentY, { align: 'right', width: 34 });
   doc.moveDown(0.2);
 
   currentY = doc.y;
   doc.text('Total Deposit:', totalsX, currentY);
-  doc.text(parseFloat(order.total_deposit || 0).toFixed(2), 160, currentY, { align: 'right', width: 34 });
+  doc.text(`$${parseFloat(order.total_deposit || 0).toFixed(2)}`, 160, currentY, { align: 'right', width: 34 });
   doc.moveDown(0.4);
 
   currentY = doc.y;
   doc.font('Helvetica-Bold').fontSize(8.5).text('Invoice Total:', totalsX, currentY);
-  doc.text(parseFloat(order.total_amount || 0).toFixed(2), 160, currentY, { align: 'right', width: 34 });
+  doc.text(`$${parseFloat(order.total_amount || 0).toFixed(2)}`, 160, currentY, { align: 'right', width: 34 });
   doc.font('Helvetica');
   doc.moveDown(1);
 

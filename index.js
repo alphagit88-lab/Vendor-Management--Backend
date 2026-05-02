@@ -12,6 +12,7 @@ const inventoryRoutes = require('./routes/inventoryRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const settingRoutes = require('./routes/settingRoutes');
 
 const app = express();
 app.set('trust proxy', true);
@@ -72,6 +73,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/settings', settingRoutes);
 
 // 404 error handler
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));

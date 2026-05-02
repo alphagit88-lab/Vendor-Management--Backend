@@ -1,18 +1,18 @@
 const pool = require('../config/database');
 
 class Order {
-  static async create({ order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, payment_type, check_number, is_checklist, items }) {
+  static async create({ order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, payment_type, check_number, is_checklist, client_timestamp, items }) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       // 1. Transactional Update - orders table (removed non-existent updated_at)
       const orderQuery = `
-        INSERT INTO orders (order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, payment_type, check_number, is_checklist, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+        INSERT INTO orders (order_number, customer_id, user_id, total_amount, total_credits, total_deposit, status, notes, load_number, payment_type, check_number, is_checklist, client_timestamp, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
         RETURNING *
       `;
-      const orderValues = [order_number, customer_id, user_id, total_amount, total_credits || 0, total_deposit || 0, status || 'pending', notes || null, load_number || null, payment_type || null, check_number || null, is_checklist || false];
+      const orderValues = [order_number, customer_id, user_id, total_amount, total_credits || 0, total_deposit || 0, status || 'pending', notes || null, load_number || null, payment_type || null, check_number || null, is_checklist || false, client_timestamp || null];
       const orderResult = await client.query(orderQuery, orderValues);
       const order = orderResult.rows[0];
 
