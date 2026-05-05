@@ -4,13 +4,15 @@ class Inventory {
   /**
    * Returns overall inventory status by merging warehouse and salespeople quantities.
    */
-  static async findAll() {
+  static async findAll(customerId = null) {
     const query = `
       SELECT 
         i.id,
         i.description_name as item_name,
         i.item_number,
-        i.price,
+        i.price as default_price,
+        COALESCE(cip.price, i.price) as price,
+        CASE WHEN cip.price IS NOT NULL THEN true ELSE false END as is_custom_price,
         c.name as category_name,
         COALESCE(inv.quantity, 0) as warehouse_quantity,
         (SELECT COALESCE(SUM(quantity), 0) FROM salesperson_inventory WHERE item_id = i.id) as salesperson_quantity,
@@ -30,9 +32,10 @@ class Inventory {
       FROM items i
       LEFT JOIN inventory inv ON i.id = inv.item_id
       LEFT JOIN categories c ON i.category_id = c.id
+      LEFT JOIN customer_item_prices cip ON i.id = cip.item_id AND cip.customer_id = $1
       ORDER BY i.description_name ASC
     `;
-    const result = await pool.query(query);
+    const result = await pool.query(query, [customerId]);
     return result.rows;
   }
 

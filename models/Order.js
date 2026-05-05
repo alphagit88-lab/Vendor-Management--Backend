@@ -18,15 +18,22 @@ class Order {
 
       if (items && items.length > 0) {
         const Inventory = require('./Inventory');
+        const Item = require('./Item');
+        let calculatedTotal = 0;
+
         for (const item of items) {
           const itemId = item.item_id || item.itemId;
           const quantity = parseInt(item.quantity || 0);
-          const unitPrice = item.price || item.unitPrice || item.unit_price;
-          const subtotal = parseFloat(item.subtotal || 0);
+          
+          // Resolve price for this specific customer
+          const resolvedItem = await Item.findByIdWithCustomerPrice(itemId, customer_id);
+          const unitPrice = resolvedItem.resolved_price;
+          const subtotal = parseFloat(quantity * unitPrice);
+          calculatedTotal += subtotal;
 
           // 2. Strict Business Validation: Max 10 per item
           if (Math.abs(quantity) > 10) {
-            throw new Error(`Quantity limit exceeded for item ${itemId}. Maximum allowed is 10.`);
+            throw new Error(`Quantity limit exceeded for item ${resolvedItem.description_name}. Maximum allowed is 10.`);
           }
 
           // 3. Insert Order Item
@@ -47,6 +54,10 @@ class Order {
             user_actor_id: user_id
           }, client);
         }
+
+        // Update the order with the correctly calculated total amount (just in case mobile total was based on default prices)
+        await client.query(`UPDATE orders SET total_amount = $1 WHERE id = $2`, [calculatedTotal, order.id]);
+        order.total_amount = calculatedTotal;
       }
 
       await client.query('COMMIT');

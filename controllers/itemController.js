@@ -65,3 +65,32 @@ exports.deleteItem = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
+
+exports.getCustomerPrices = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const prices = await Item.getCustomerPrices(id);
+    res.json({ success: true, data: prices });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+exports.updateCustomerPrice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customer_id, price } = req.body;
+    
+    if (price === null || price === undefined) {
+      await Item.deleteCustomerPrice(id, customer_id);
+      return res.json({ success: true, message: 'Customer price removed' });
+    }
+
+    const updated = await Item.setCustomerPrice(id, customer_id, price);
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};

@@ -69,8 +69,8 @@ const drawBillContent = (doc, data) => {
   const tableTop = doc.y;
   doc.fontSize(6.5).font('Helvetica-Bold');
   doc.text('ITEM#', 10, tableTop);
-  doc.text('QTY', 34, tableTop);
-  doc.text('DESCRIPTION', 54, tableTop);
+  doc.text('QTY', 39, tableTop);
+  doc.text('DESCRIPTION', 59, tableTop);
   doc.text('AMOUNT', 160, tableTop, { align: 'right', width: 34 });
   doc.fontSize(5.5).font('Helvetica');
 
@@ -81,12 +81,12 @@ const drawBillContent = (doc, data) => {
   // --- ITEMS ---
   items.forEach(item => {
     const startY = doc.y;
-    doc.fontSize(5.5);
+    doc.fontSize(6.2);
     doc.text(item.item_number || 'N/A', 10, startY);
-    doc.text(item.quantity.toString(), 34, startY);
+    doc.text(item.quantity.toString(), 39, startY);
 
     // Description can span multiple lines
-    doc.text(item.item_name || item.description_name, 54, startY, { width: 108 });
+    doc.text(item.item_name || item.description_name, 59, startY, { width: 108 });
 
     const lineTotal = `$${parseFloat(item.subtotal).toFixed(2)}`;
     doc.text(lineTotal, 160, startY, { align: 'right', width: 34 });

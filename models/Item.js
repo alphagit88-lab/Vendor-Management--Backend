@@ -65,6 +65,46 @@ class Item {
     const result = await pool.query(query, [id]);
     return result.rows[0];
   }
+
+  static async getCustomerPrices(itemId) {
+    const query = `
+      SELECT cip.*, c.name as customer_name, c.email as customer_email
+      FROM customer_item_prices cip
+      JOIN customers c ON cip.customer_id = c.id
+      WHERE cip.item_id = $1
+    `;
+    const result = await pool.query(query, [itemId]);
+    return result.rows;
+  }
+
+  static async setCustomerPrice(itemId, customerId, price) {
+    const query = `
+      INSERT INTO customer_item_prices (item_id, customer_id, price)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (item_id, customer_id) DO UPDATE
+      SET price = EXCLUDED.price, updated_at = NOW()
+      RETURNING *
+    `;
+    const result = await pool.query(query, [itemId, customerId, price]);
+    return result.rows[0];
+  }
+
+  static async deleteCustomerPrice(itemId, customerId) {
+    const query = `DELETE FROM customer_item_prices WHERE item_id = $1 AND customer_id = $2`;
+    await pool.query(query, [itemId, customerId]);
+  }
+
+  static async findByIdWithCustomerPrice(itemId, customerId) {
+    const query = `
+      SELECT i.*, COALESCE(cip.price, i.price) as resolved_price,
+             CASE WHEN cip.price IS NOT NULL THEN true ELSE false END as is_custom_price
+      FROM items i
+      LEFT JOIN customer_item_prices cip ON i.id = cip.item_id AND cip.customer_id = $2
+      WHERE i.id = $1
+    `;
+    const result = await pool.query(query, [itemId, customerId]);
+    return result.rows[0];
+  }
 }
 
 module.exports = Item;
